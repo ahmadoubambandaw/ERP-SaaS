@@ -71,7 +71,7 @@ export default function ProjectsPage() {
                 <h3 className="font-semibold text-gray-900">{p.name as string}</h3>
                 <StatusBadge status={p.status as string} />
               </div>
-              {p.description && <p className="text-sm text-gray-500 mb-3 line-clamp-2">{p.description as string}</p>}
+              {Boolean(p.description) && <p className="text-sm text-gray-500 mb-3 line-clamp-2">{p.description as string}</p>}
               <div className="mb-3">
                 <div className="flex justify-between text-xs text-gray-500 mb-1">
                   <span>Progression</span><span>{p.progress as number}%</span>
@@ -82,8 +82,8 @@ export default function ProjectsPage() {
               </div>
               <div className="flex justify-between text-xs text-gray-500">
                 <span>{(p._count as Record<string, number>)?.tasks || 0} taches</span>
-                {p.budget && <span>{formatCurrency(p.budget as number, currency)}</span>}
-                {p.endDate && <span>Fin: {formatDate(p.endDate as string)}</span>}
+                {Boolean(p.budget) && <span>{formatCurrency(p.budget as number, currency)}</span>}
+                {Boolean(p.endDate) && <span>Fin: {formatDate(p.endDate as string)}</span>}
               </div>
             </Link>
           ))

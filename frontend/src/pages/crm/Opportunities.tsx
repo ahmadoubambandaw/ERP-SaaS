@@ -36,8 +36,8 @@ export default function OpportunitiesPage() {
                 {stageOpps.map((opp: Record<string, unknown>) => (
                   <div key={opp.id as string} className="bg-white rounded-lg p-3 shadow-sm">
                     <p className="font-medium text-sm text-gray-900">{opp.name as string}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{(opp.customer as Record<string, unknown>)?.name as string}</p>
-                    {opp.value && <p className="text-xs font-medium text-primary-600 mt-1">{formatCurrency(opp.value as number, currency)}</p>}
+                    <p className="text-xs text-gray-500 mt-0.5">{String((opp.customer as Record<string, unknown>)?.name ?? '')}</p>
+                    {Boolean(opp.value) && <p className="text-xs font-medium text-primary-600 mt-1">{formatCurrency(opp.value as number, currency)}</p>}
                     <p className="text-xs text-gray-400 mt-1">{opp.probability as number}% probabilite</p>
                   </div>
                 ))}

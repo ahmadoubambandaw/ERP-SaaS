@@ -105,6 +105,7 @@ export const hrService = {
   updateEmployee: (id: string, data: unknown) => api.patch(`/hr/employees/${id}`, data),
   payslips: (period?: string) => api.get('/hr/payslips', { params: { period } }),
   generatePayslips: (period: string) => api.post('/hr/payslips/generate', { period }),
+  approvePayslip: (id: string) => api.patch(`/hr/payslips/${id}/approve`),
   leaves: () => api.get('/hr/leaves'),
   createLeave: (data: unknown) => api.post('/hr/leaves', data),
   approveLeave: (id: string) => api.patch(`/hr/leaves/${id}/approve`),

@@ -14,7 +14,13 @@ export default function AccountingPage() {
   const [showForm, setShowForm] = useState(false);
   const qc = useQueryClient();
   const { register, control, handleSubmit, reset } = useForm({
-    defaultValues: { date: new Date().toISOString().split('T')[0], lines: [{ debit: 0, credit: 0, description: '' }] },
+    defaultValues: {
+      journalId: '',
+      reference: '',
+      date: new Date().toISOString().split('T')[0],
+      description: '',
+      lines: [{ debitAccountId: '', creditAccountId: '', debit: 0, credit: 0, description: '' }],
+    },
   });
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' });
 
@@ -99,7 +105,7 @@ export default function AccountingPage() {
                   </div>
                 </div>
               ))}
-              <button type="button" onClick={() => append({ debit: 0, credit: 0, description: '' })} className="text-sm text-primary-600 hover:underline">
+              <button type="button" onClick={() => append({ debitAccountId: '', creditAccountId: '', debit: 0, credit: 0, description: '' })} className="text-sm text-primary-600 hover:underline">
                 + Ajouter une ligne
               </button>
             </div>

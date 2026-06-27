@@ -96,12 +96,12 @@ export default function ProductsPage() {
               </td></tr>
               : products.map((p: Record<string, unknown>) => {
                 const stock = getStock(p);
-                const isLow = p.reorderLevel && stock <= Number(p.reorderLevel);
+                const isLow = Boolean(p.reorderLevel) && stock <= Number(p.reorderLevel);
                 return (
                   <tr key={p.id as string} className="table-row">
                     <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.code as string}</td>
                     <td className="px-6 py-4 font-medium">{p.name as string}</td>
-                    <td className="px-6 py-4 text-gray-500">{p.category as string || '-'}</td>
+                    <td className="px-6 py-4 text-gray-500">{(p.category as string) || '-'}</td>
                     <td className="px-6 py-4 text-right">{p.costPrice ? formatCurrency(p.costPrice as number, currency) : '-'}</td>
                     <td className="px-6 py-4 text-right">{p.salePrice ? formatCurrency(p.salePrice as number, currency) : '-'}</td>
                     <td className={`px-6 py-4 text-right font-medium ${isLow ? 'text-orange-600' : 'text-gray-900'}`}>

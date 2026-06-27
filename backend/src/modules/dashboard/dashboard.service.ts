@@ -5,7 +5,7 @@ export class DashboardService {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [invoiceStats, customerCount, employeeCount, productCount, leadCount, projectCount, lowStock, pendingLeaves] = await Promise.all([
+    const [invoiceStats, customerCount, employeeCount, productCount, leadCount, projectCount, lowStockCount, pendingLeaves] = await Promise.all([
       prisma.invoice.aggregate({
         where: { organizationId: orgId, type: 'INVOICE' },
         _sum: { total: true, paidAmount: true },
@@ -19,8 +19,9 @@ export class DashboardService {
       prisma.product.count({
         where: {
           organizationId: orgId,
+          isActive: true,
           reorderLevel: { not: null },
-          stockLevels: { some: { quantity: { lte: prisma.product.fields.reorderLevel } } },
+          stockLevels: { some: { quantity: { lte: 0 } } },
         },
       }).catch(() => 0),
       prisma.leaveRequest.count({ where: { employee: { organizationId: orgId }, status: 'PENDING' } }),
@@ -50,7 +51,7 @@ export class DashboardService {
       leads: leadCount,
       projects: projectCount,
       alerts: {
-        lowStock: 0,
+        lowStock: lowStockCount,
         pendingLeaves,
         overdueInvoices,
       },

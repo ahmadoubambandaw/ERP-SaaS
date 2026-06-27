@@ -93,10 +93,10 @@ export default function ProjectDetailPage() {
               {tasks.filter((t: Record<string, unknown>) => t.status === status).map((task: Record<string, unknown>) => (
                 <div key={task.id as string} className={`bg-white rounded-lg p-3 border-l-4 shadow-sm ${priorityColors[task.priority as string] || ''}`}>
                   <p className="text-sm font-medium text-gray-900">{task.title as string}</p>
-                  {task.dueDate && <p className="text-xs text-gray-400 mt-1">Echeance: {new Date(task.dueDate as string).toLocaleDateString('fr-FR')}</p>}
-                  {task.assignee && (
+                  {Boolean(task.dueDate) && <p className="text-xs text-gray-400 mt-1">Echeance: {new Date(task.dueDate as string).toLocaleDateString('fr-FR')}</p>}
+                  {Boolean(task.assignee) && (
                     <p className="text-xs text-gray-500 mt-1">
-                      {(task.assignee as Record<string, unknown>).firstName as string} {(task.assignee as Record<string, unknown>).lastName as string}
+                      {String((task.assignee as Record<string, unknown>).firstName ?? '')} {String((task.assignee as Record<string, unknown>).lastName ?? '')}
                     </p>
                   )}
                   <select
