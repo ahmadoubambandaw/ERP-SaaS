@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, AlertTriangle } from 'lucide-react';
+import { Plus, Package, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { inventoryService } from '../../services/api';
@@ -10,6 +10,7 @@ export default function ProductsPage() {
   const { organization } = useAuthStore();
   const currency = organization?.currency || 'XOF';
   const [showForm, setShowForm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
   const { register, handleSubmit, reset } = useForm();
 
@@ -21,7 +22,16 @@ export default function ProductsPage() {
 
   const mutation = useMutation({
     mutationFn: (d: unknown) => inventoryService.createProduct(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['products'] }); setShowForm(false); reset(); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['products'] });
+      setShowForm(false);
+      setErrorMsg('');
+      reset();
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setErrorMsg(msg || 'Erreur lors de l\'enregistrement du produit');
+    },
   });
 
   const getStock = (p: Record<string, unknown>) => {
@@ -51,8 +61,13 @@ export default function ProductsPage() {
       )}
 
       {showForm && (
-        <div className="card p-6">
+        <div className="card p-6 border-2 border-primary-100">
           <h3 className="font-semibold mb-4">Nouveau produit</h3>
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-3 gap-4">
             <div><label className="label">Code *</label><input {...register('code', { required: true })} className="input" /></div>
             <div className="col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
@@ -71,8 +86,11 @@ export default function ProductsPage() {
             <div><label className="label">Seuil reappro.</label><input {...register('reorderLevel', { valueAsNumber: true })} type="number" className="input" /></div>
             <div><label className="label">TVA (%)</label><input {...register('taxRate', { valueAsNumber: true })} type="number" step="0.5" className="input" /></div>
             <div className="col-span-3 flex gap-3 justify-end">
-              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Annuler</button>
-              <button type="submit" className="btn-primary">Enregistrer</button>
+              <button type="button" onClick={() => { setShowForm(false); setErrorMsg(''); reset(); }} className="btn-secondary">Annuler</button>
+              <button type="submit" disabled={mutation.isPending} className="btn-primary flex items-center gap-2">
+                {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {mutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
             </div>
           </form>
         </div>

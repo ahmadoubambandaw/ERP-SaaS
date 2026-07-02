@@ -52,6 +52,7 @@ export default function StockMovementsPage() {
   const { organization } = useAuthStore();
   const currency = organization?.currency || 'XOF';
   const [showForm, setShowForm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
 
   const { register, handleSubmit, reset } = useForm<MovementFormData>({
@@ -77,7 +78,12 @@ export default function StockMovementsPage() {
       qc.invalidateQueries({ queryKey: ['products'] });
       qc.invalidateQueries({ queryKey: ['low-stock'] });
       setShowForm(false);
+      setErrorMsg('');
       reset();
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setErrorMsg(msg || 'Erreur lors de l\'enregistrement du mouvement');
     },
   });
 
@@ -96,6 +102,11 @@ export default function StockMovementsPage() {
       {showForm && (
         <div className="card p-6 border-2 border-primary-100">
           <h3 className="font-semibold text-gray-900 mb-4">Enregistrer un mouvement</h3>
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <label className="label">Produit *</label>
@@ -152,7 +163,7 @@ export default function StockMovementsPage() {
             <div className="col-span-full flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => { setShowForm(false); reset(); }}
+                onClick={() => { setShowForm(false); reset(); setErrorMsg(''); }}
                 className="btn-secondary"
               >
                 Annuler
