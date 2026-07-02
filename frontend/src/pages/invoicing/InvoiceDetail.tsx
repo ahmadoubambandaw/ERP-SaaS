@@ -26,7 +26,41 @@ const TYPE_LABELS: Record<string, string> = {
   CREDIT_NOTE: 'Avoir',
 };
 
-interface PaymentForm {
+interface InvoiceLine {
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  taxRate: number;
+  total: number;
+}
+
+interface InvoicePayment {
+  id: string;
+  amount: number;
+  date: string;
+  method: string;
+  reference?: string;
+  notes?: string;
+}
+
+interface Invoice {
+  id: string;
+  number: string;
+  type: string;
+  status: string;
+  issueDate: string;
+  dueDate: string;
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  paidAmount: number;
+  notes?: string;
+  customer: { id: string; name: string; email?: string };
+  lines: InvoiceLine[];
+  payments: InvoicePayment[];
+}
+
+interface PaymentFormData {
   amount: number;
   date: string;
   method: string;
@@ -48,7 +82,7 @@ export default function InvoiceDetailPage() {
     enabled: !!id,
   });
 
-  const inv = data?.data?.data as Record<string, unknown> | undefined;
+  const inv = data?.data?.data as Invoice | undefined;
 
   const sendMutation = useMutation({
     mutationFn: () => invoicingService.send(id!),
@@ -60,7 +94,7 @@ export default function InvoiceDetailPage() {
     onSuccess: () => navigate('/invoicing'),
   });
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<PaymentForm>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<PaymentFormData>({
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
       method: 'CASH',
@@ -72,7 +106,7 @@ export default function InvoiceDetailPage() {
   const watchedAmount = watch('amount');
 
   const paymentMutation = useMutation({
-    mutationFn: (data: PaymentForm) => invoicingService.addPayment(id!, data),
+    mutationFn: (formData: PaymentFormData) => invoicingService.addPayment(id!, formData),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['invoice', id] });
       qc.invalidateQueries({ queryKey: ['invoices'] });
@@ -81,21 +115,26 @@ export default function InvoiceDetailPage() {
     },
   });
 
-  if (isLoading) return <div className="text-center py-20 text-gray-400">Chargement...</div>;
-  if (error || !inv) return (
-    <div className="text-center py-20">
-      <p className="text-gray-500">Facture introuvable</p>
-      <Link to="/invoicing" className="text-primary-600 hover:underline mt-2 inline-block">Retour aux factures</Link>
-    </div>
-  );
+  if (isLoading) {
+    return <div className="text-center py-20 text-gray-400">Chargement...</div>;
+  }
 
-  const customer = inv.customer as Record<string, unknown>;
-  const lines = (inv.lines as Record<string, unknown>[]) || [];
-  const payments = (inv.payments as Record<string, unknown>[]) || [];
+  if (error || !inv) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-gray-500">Facture introuvable</p>
+        <Link to="/invoicing" className="text-primary-600 hover:underline mt-2 inline-block">
+          Retour aux factures
+        </Link>
+      </div>
+    );
+  }
+
   const remaining = Number(inv.total) - Number(inv.paidAmount);
   const isDraft = inv.status === 'DRAFT';
   const isCancelled = inv.status === 'CANCELLED';
   const isPaid = inv.status === 'PAID';
+  const canReceivePayment = !isPaid && !isCancelled && inv.status !== 'DRAFT';
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -107,11 +146,11 @@ export default function InvoiceDetailPage() {
           </button>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">{inv.number as string}</h1>
-              <span className="badge badge-blue">{TYPE_LABELS[inv.type as string] || inv.type as string}</span>
-              <StatusBadge status={inv.status as string} />
+              <h1 className="text-2xl font-bold text-gray-900">{inv.number}</h1>
+              <span className="badge badge-blue">{TYPE_LABELS[inv.type] ?? inv.type}</span>
+              <StatusBadge status={inv.status} />
             </div>
-            <p className="text-gray-500 text-sm mt-0.5">{customer?.name as string}</p>
+            <p className="text-gray-500 text-sm mt-0.5">{inv.customer.name}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -134,7 +173,7 @@ export default function InvoiceDetailPage() {
               </button>
             </>
           )}
-          {!isPaid && !isCancelled && inv.status !== 'DRAFT' && (
+          {canReceivePayment && (
             <button
               onClick={() => setShowPaymentForm(true)}
               className="btn-primary flex items-center gap-2"
@@ -149,15 +188,15 @@ export default function InvoiceDetailPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="card p-4">
           <p className="text-xs text-gray-500 mb-1">Date d'émission</p>
-          <p className="font-semibold">{formatDate(inv.issueDate as string)}</p>
+          <p className="font-semibold">{formatDate(inv.issueDate)}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-gray-500 mb-1">Échéance</p>
-          <p className="font-semibold">{formatDate(inv.dueDate as string)}</p>
+          <p className="font-semibold">{formatDate(inv.dueDate)}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-gray-500 mb-1">Montant total</p>
-          <p className="font-bold text-lg text-primary-600">{formatCurrency(inv.total as number, currency)}</p>
+          <p className="font-bold text-lg text-primary-600">{formatCurrency(inv.total, currency)}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs text-gray-500 mb-1">Reste à payer</p>
@@ -179,17 +218,18 @@ export default function InvoiceDetailPage() {
               <div>
                 <label className="label">Montant *</label>
                 <input
-                  {...register('amount', { required: true, valueAsNumber: true, min: 0.01, max: remaining })}
+                  {...register('amount', { required: true, valueAsNumber: true, min: 0.01 })}
                   type="number"
                   step="1"
                   min="0"
-                  max={remaining}
                   className="input"
-                  placeholder={formatCurrency(remaining, currency)}
+                  placeholder={String(remaining)}
                 />
                 {errors.amount && <p className="text-xs text-red-500 mt-1">Montant invalide</p>}
-                {Number(watchedAmount) > remaining && (
-                  <p className="text-xs text-orange-500 mt-1">Supérieur au solde restant ({formatCurrency(remaining, currency)})</p>
+                {Number(watchedAmount) > remaining && remaining > 0 && (
+                  <p className="text-xs text-orange-500 mt-1">
+                    Supérieur au solde ({formatCurrency(remaining, currency)})
+                  </p>
                 )}
               </div>
               <div>
@@ -214,7 +254,13 @@ export default function InvoiceDetailPage() {
               </div>
             </div>
             <div className="flex justify-end gap-3">
-              <button type="button" onClick={() => { setShowPaymentForm(false); reset(); }} className="btn-secondary">Annuler</button>
+              <button
+                type="button"
+                onClick={() => { setShowPaymentForm(false); reset(); }}
+                className="btn-secondary"
+              >
+                Annuler
+              </button>
               <button type="submit" disabled={paymentMutation.isPending} className="btn-primary">
                 {paymentMutation.isPending ? 'Enregistrement...' : 'Enregistrer le paiement'}
               </button>
@@ -239,35 +285,37 @@ export default function InvoiceDetailPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {lines.map((line, i) => (
+            {inv.lines.map((line, i) => (
               <tr key={i} className="hover:bg-gray-50">
-                <td className="px-6 py-3">{line.description as string}</td>
+                <td className="px-6 py-3">{line.description}</td>
                 <td className="px-6 py-3 text-right text-gray-500">{Number(line.quantity).toLocaleString()}</td>
-                <td className="px-6 py-3 text-right text-gray-500">{formatCurrency(line.unitPrice as number, currency)}</td>
+                <td className="px-6 py-3 text-right text-gray-500">{formatCurrency(line.unitPrice, currency)}</td>
                 <td className="px-6 py-3 text-right text-gray-500">{Number(line.taxRate)}%</td>
-                <td className="px-6 py-3 text-right font-medium">{formatCurrency(line.total as number, currency)}</td>
+                <td className="px-6 py-3 text-right font-medium">{formatCurrency(line.total, currency)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot className="bg-gray-50">
             <tr>
               <td colSpan={4} className="px-6 py-3 text-right text-gray-500">Sous-total</td>
-              <td className="px-6 py-3 text-right font-medium">{formatCurrency(inv.subtotal as number, currency)}</td>
+              <td className="px-6 py-3 text-right font-medium">{formatCurrency(inv.subtotal, currency)}</td>
             </tr>
             <tr>
               <td colSpan={4} className="px-6 py-3 text-right text-gray-500">TVA</td>
-              <td className="px-6 py-3 text-right font-medium">{formatCurrency(inv.taxAmount as number, currency)}</td>
+              <td className="px-6 py-3 text-right font-medium">{formatCurrency(inv.taxAmount, currency)}</td>
             </tr>
             <tr className="border-t border-gray-200">
               <td colSpan={4} className="px-6 py-3 text-right font-bold text-gray-900">Total</td>
-              <td className="px-6 py-3 text-right font-bold text-lg text-primary-600">{formatCurrency(inv.total as number, currency)}</td>
+              <td className="px-6 py-3 text-right font-bold text-lg text-primary-600">
+                {formatCurrency(inv.total, currency)}
+              </td>
             </tr>
           </tfoot>
         </table>
       </div>
 
       {/* Payments history */}
-      {payments.length > 0 && (
+      {inv.payments.length > 0 && (
         <div className="card">
           <div className="px-6 py-4 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Historique des paiements</h3>
@@ -282,21 +330,25 @@ export default function InvoiceDetailPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {payments.map((p) => (
-                <tr key={p.id as string} className="hover:bg-gray-50">
-                  <td className="px-6 py-3">{formatDate(p.date as string)}</td>
+              {inv.payments.map((p) => (
+                <tr key={p.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-3">{formatDate(p.date)}</td>
                   <td className="px-6 py-3 text-gray-500">
-                    {PAYMENT_METHODS.find((m) => m.value === p.method)?.label || p.method as string}
+                    {PAYMENT_METHODS.find((m) => m.value === p.method)?.label ?? p.method}
                   </td>
-                  <td className="px-6 py-3 text-gray-500 font-mono text-xs">{p.reference as string || '—'}</td>
-                  <td className="px-6 py-3 text-right font-semibold text-green-600">{formatCurrency(p.amount as number, currency)}</td>
+                  <td className="px-6 py-3 text-gray-500 font-mono text-xs">{p.reference ?? '—'}</td>
+                  <td className="px-6 py-3 text-right font-semibold text-green-600">
+                    {formatCurrency(p.amount, currency)}
+                  </td>
                 </tr>
               ))}
             </tbody>
             <tfoot className="bg-gray-50 border-t border-gray-200">
               <tr>
                 <td colSpan={3} className="px-6 py-3 font-semibold text-gray-700">Total encaissé</td>
-                <td className="px-6 py-3 text-right font-bold text-green-600">{formatCurrency(inv.paidAmount as number, currency)}</td>
+                <td className="px-6 py-3 text-right font-bold text-green-600">
+                  {formatCurrency(inv.paidAmount, currency)}
+                </td>
               </tr>
             </tfoot>
           </table>
@@ -307,7 +359,7 @@ export default function InvoiceDetailPage() {
       {inv.notes && (
         <div className="card p-6">
           <h3 className="font-semibold text-gray-900 mb-2">Notes</h3>
-          <p className="text-gray-600 text-sm whitespace-pre-line">{inv.notes as string}</p>
+          <p className="text-gray-600 text-sm whitespace-pre-line">{inv.notes}</p>
         </div>
       )}
     </div>
