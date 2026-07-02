@@ -11,8 +11,17 @@ export class AppError extends Error {
   }
 }
 
+const PRISMA_ERROR_MESSAGES: Record<string, string> = {
+  P2002: 'Cette valeur existe déjà (contrainte unique)',
+  P2003: 'Référence invalide (contrainte de clé étrangère)',
+  P2025: 'Enregistrement introuvable',
+  P2000: 'Valeur trop longue pour ce champ',
+  P2011: 'Champ obligatoire manquant',
+  P2012: 'Champ obligatoire manquant',
+};
+
 export function errorMiddleware(
-  err: Error,
+  err: Error & { code?: string },
   _req: Request,
   res: Response,
   _next: NextFunction
@@ -39,6 +48,22 @@ export function errorMiddleware(
     res.status(401).json({
       success: false,
       error: 'Token invalide',
+    });
+    return;
+  }
+
+  if (
+    err.name === 'PrismaClientKnownRequestError' ||
+    err.name === 'PrismaClientUnknownRequestError' ||
+    err.name === 'PrismaClientValidationError'
+  ) {
+    const errorCode = err.code || '';
+    const message = PRISMA_ERROR_MESSAGES[errorCode] || 'Erreur de base de données';
+    console.error('Prisma error:', err);
+    res.status(400).json({
+      success: false,
+      error: message,
+      code: errorCode,
     });
     return;
   }
