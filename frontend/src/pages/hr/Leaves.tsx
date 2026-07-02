@@ -3,6 +3,7 @@ import { Plus, Check, Calendar, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { hrService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import { formatDate } from '../../utils/format';
 import StatusBadge from '../../components/ui/StatusBadge';
 
@@ -71,8 +72,7 @@ export default function LeavesPage() {
       reset();
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setErrorMsg(msg || 'Erreur lors de la soumission de la demande');
+      setErrorMsg(getApiError(err, 'Erreur lors de la soumission de la demande'));
     },
   });
 
