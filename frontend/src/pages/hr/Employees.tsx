@@ -3,6 +3,7 @@ import { Plus, Users, Loader2, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { hrService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -72,8 +73,7 @@ export default function EmployeesPage() {
       reset();
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setErrorMsg(msg || 'Erreur lors de l\'enregistrement. Vérifiez les champs obligatoires.');
+      setErrorMsg(getApiError(err, 'Erreur lors de l\'enregistrement'));
     },
   });
 

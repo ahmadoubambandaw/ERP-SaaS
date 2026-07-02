@@ -3,6 +3,7 @@ import { Plus, Warehouse, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { inventoryService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 
 interface WarehouseFormData {
   name: string;
@@ -42,8 +43,7 @@ export default function WarehousesPage() {
       reset();
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setErrorMsg(msg || 'Erreur lors de la création de l\'entrepôt');
+      setErrorMsg(getApiError(err, 'Erreur lors de la création de l\'entrepôt'));
     },
   });
 

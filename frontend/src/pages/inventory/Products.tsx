@@ -3,6 +3,7 @@ import { Plus, Package, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { inventoryService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import { formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -29,8 +30,7 @@ export default function ProductsPage() {
       reset();
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setErrorMsg(msg || 'Erreur lors de l\'enregistrement du produit');
+      setErrorMsg(getApiError(err, 'Erreur lors de l\'enregistrement du produit'));
     },
   });
 

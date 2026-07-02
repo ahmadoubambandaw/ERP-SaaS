@@ -3,6 +3,7 @@ import { ArrowUp, ArrowDown, Plus, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { inventoryService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import { formatDate, formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -82,8 +83,7 @@ export default function StockMovementsPage() {
       reset();
     },
     onError: (err: unknown) => {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setErrorMsg(msg || 'Erreur lors de l\'enregistrement du mouvement');
+      setErrorMsg(getApiError(err, 'Erreur lors de l\'enregistrement du mouvement'));
     },
   });
 
