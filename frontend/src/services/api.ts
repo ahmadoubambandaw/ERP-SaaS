@@ -135,8 +135,11 @@ export const accountingService = {
   accounts: () => api.get('/accounting/accounts'),
   createAccount: (data: unknown) => api.post('/accounting/accounts', data),
   journals: () => api.get('/accounting/journals'),
+  createJournal: (data: unknown) => api.post('/accounting/journals', data),
   entries: (params?: Record<string, string>) => api.get('/accounting/entries', { params }),
   createEntry: (data: unknown) => api.post('/accounting/entries', data),
   postEntry: (id: string) => api.patch(`/accounting/entries/${id}/post`),
+  deleteEntry: (id: string) => api.delete(`/accounting/entries/${id}`),
   trialBalance: () => api.get('/accounting/reports/trial-balance'),
+  ledger: (accountCode: string) => api.get(`/accounting/reports/ledger/${accountCode}`),
 };
