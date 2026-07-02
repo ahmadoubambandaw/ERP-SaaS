@@ -22,13 +22,15 @@ const navItems = [
     children: [
       { label: 'Produits', to: '/inventory' },
       { label: 'Mouvements', to: '/inventory/movements' },
+      { label: 'Entrepôts', to: '/inventory/warehouses' },
     ],
   },
   {
     label: 'RH & Paie', icon: Users, to: '/hr',
     children: [
-      { label: 'Employes', to: '/hr' },
+      { label: 'Employés', to: '/hr' },
       { label: 'Bulletins de paie', to: '/hr/payroll' },
+      { label: 'Congés', to: '/hr/leaves' },
     ],
   },
   {

@@ -93,6 +93,7 @@ export const inventoryService = {
   createProduct: (data: unknown) => api.post('/inventory/products', data),
   updateProduct: (id: string, data: unknown) => api.patch(`/inventory/products/${id}`, data),
   warehouses: () => api.get('/inventory/warehouses'),
+  createWarehouse: (data: unknown) => api.post('/inventory/warehouses', data),
   stockLevels: () => api.get('/inventory/stock-levels'),
   lowStock: () => api.get('/inventory/low-stock'),
   movements: () => api.get('/inventory/movements'),
