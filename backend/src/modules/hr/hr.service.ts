@@ -2,6 +2,13 @@ import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
 
+function clean(body: unknown): Record<string, unknown> {
+  if (typeof body !== 'object' || body === null) return {};
+  return Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).filter(([, v]) => v !== '' && v !== null),
+  );
+}
+
 const employeeSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
@@ -16,7 +23,7 @@ const employeeSchema = z.object({
   employmentType: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN', 'CONSULTANT']).default('FULL_TIME'),
   startDate: z.string().transform((v) => new Date(v)),
   baseSalary: z.number().min(0),
-  currency: z.string().length(3).default('XOF'),
+  currency: z.string().default('XOF'),
   bankAccount: z.string().optional(),
   mobileMoneyNumber: z.string().optional(),
 });
@@ -30,7 +37,7 @@ export class HrService {
   }
 
   async createEmployee(orgId: string, body: unknown) {
-    const data = employeeSchema.parse(body);
+    const data = employeeSchema.parse(clean(body));
     const count = await prisma.employee.count({ where: { organizationId: orgId } });
     const employeeNumber = `EMP-${String(count + 1).padStart(4, '0')}`;
     return prisma.employee.create({ data: { ...data, employeeNumber, organizationId: orgId } });
@@ -44,7 +51,7 @@ export class HrService {
 
   async updateEmployee(orgId: string, id: string, body: unknown) {
     await this.getEmployee(orgId, id);
-    const data = employeeSchema.partial().parse(body);
+    const data = employeeSchema.partial().parse(clean(body));
     return prisma.employee.update({ where: { id }, data });
   }
 

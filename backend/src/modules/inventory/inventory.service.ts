@@ -2,6 +2,13 @@ import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
 
+function clean(body: unknown): Record<string, unknown> {
+  if (typeof body !== 'object' || body === null) return {};
+  return Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).filter(([, v]) => v !== '' && v !== null),
+  );
+}
+
 const productSchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),
@@ -23,6 +30,7 @@ const movementSchema = z.object({
   unitCost: z.number().min(0).optional(),
   reference: z.string().optional(),
   notes: z.string().optional(),
+  date: z.string().optional().transform((v) => (v ? new Date(v) : new Date())),
 });
 
 export class InventoryService {
@@ -35,7 +43,7 @@ export class InventoryService {
   }
 
   async createProduct(orgId: string, body: unknown) {
-    const data = productSchema.parse(body);
+    const data = productSchema.parse(clean(body));
     const existing = await prisma.product.findUnique({ where: { organizationId_code: { organizationId: orgId, code: data.code } } });
     if (existing) throw new AppError('Ce code produit existe deja', 409);
     return prisma.product.create({ data: { ...data, organizationId: orgId } });
@@ -61,7 +69,10 @@ export class InventoryService {
   }
 
   async createWarehouse(orgId: string, body: unknown) {
-    const data = z.object({ name: z.string().min(1), address: z.string().optional() }).parse(body);
+    const data = z.object({
+      name: z.string().min(1),
+      address: z.string().optional(),
+    }).parse(clean(body));
     return prisma.warehouse.create({ data: { ...data, organizationId: orgId } });
   }
 

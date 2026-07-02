@@ -43,6 +43,7 @@ interface Leave {
 
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<LeaveFormData>({
@@ -66,7 +67,12 @@ export default function LeavesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['leaves'] });
       setShowForm(false);
+      setErrorMsg('');
       reset();
+    },
+    onError: (err: unknown) => {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setErrorMsg(msg || 'Erreur lors de la soumission de la demande');
     },
   });
 
@@ -118,6 +124,11 @@ export default function LeavesPage() {
             <Calendar className="w-5 h-5 text-primary-500" />
             Nouvelle demande de congé
           </h3>
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
           <form
             onSubmit={handleSubmit((d) => mutation.mutate(d))}
             className="grid grid-cols-2 md:grid-cols-3 gap-4"
@@ -171,7 +182,7 @@ export default function LeavesPage() {
             <div className="col-span-full flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => { setShowForm(false); reset(); }}
+                onClick={() => { setShowForm(false); reset(); setErrorMsg(''); }}
                 className="btn-secondary"
               >
                 Annuler
