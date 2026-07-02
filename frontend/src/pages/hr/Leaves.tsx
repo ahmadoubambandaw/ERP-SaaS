@@ -36,7 +36,7 @@ interface Leave {
   type: string;
   startDate: string;
   endDate: string;
-  daysCount?: number;
+  days?: number;
   reason?: string;
   status: string;
   employee: Employee;
@@ -240,7 +240,7 @@ export default function LeavesPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right font-medium">
-                    {l.daysCount ?? '-'}
+                    {l.days ?? '-'}
                   </td>
                   <td className="px-6 py-4">
                     <StatusBadge status={l.status} />

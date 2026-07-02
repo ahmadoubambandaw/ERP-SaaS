@@ -39,8 +39,17 @@ export class HrService {
   async createEmployee(orgId: string, body: unknown) {
     const data = employeeSchema.parse(clean(body));
     const count = await prisma.employee.count({ where: { organizationId: orgId } });
-    const employeeNumber = `EMP-${String(count + 1).padStart(4, '0')}`;
-    return prisma.employee.create({ data: { ...data, employeeNumber, organizationId: orgId } });
+    let attempt = 0;
+    while (attempt < 5) {
+      const employeeNumber = `EMP-${String(count + 1 + attempt).padStart(4, '0')}`;
+      try {
+        return await prisma.employee.create({ data: { ...data, employeeNumber, organizationId: orgId } });
+      } catch (e: unknown) {
+        if ((e as { code?: string })?.code === 'P2002') { attempt++; continue; }
+        throw e;
+      }
+    }
+    throw new AppError('Impossible de générer un numéro d\'employé unique', 500);
   }
 
   async getEmployee(orgId: string, id: string) {
@@ -108,7 +117,7 @@ export class HrService {
       startDate: z.string().transform((v) => new Date(v)),
       endDate: z.string().transform((v) => new Date(v)),
       reason: z.string().optional(),
-    }).parse(body);
+    }).parse(clean(body));
 
     await this.getEmployee(orgId, data.employeeId);
     const days = Math.ceil((data.endDate.getTime() - data.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
