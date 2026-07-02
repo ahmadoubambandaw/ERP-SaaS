@@ -58,7 +58,7 @@ model User {
   firstName      String
   lastName       String
   email          String
-  password       String
+  password       String    @map("passwordHash")
   role           UserRole  @default(EMPLOYEE)
   isActive       Boolean   @default(true)
   avatar         String?
