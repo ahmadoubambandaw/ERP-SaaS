@@ -14,6 +14,7 @@ import { hrRouter } from './modules/hr/hr.routes';
 import { crmRouter } from './modules/crm/crm.routes';
 import { projectsRouter } from './modules/projects/projects.routes';
 import { dashboardRouter } from './modules/dashboard/dashboard.routes';
+import { prisma } from './utils/prisma';
 
 const app = express();
 
@@ -46,6 +47,29 @@ app.use('/api', limiter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '1.0.0' });
+});
+
+app.get('/debug/db', async (_req, res) => {
+  const results: Record<string, unknown> = {};
+  try {
+    const orgCols = await prisma.$queryRaw<{ column_name: string }[]>`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'Organization'
+      ORDER BY ordinal_position`;
+    results.orgColumns = orgCols.map((r) => r.column_name);
+  } catch (e) { results.orgColumnsError = String(e); }
+
+  try {
+    const org = await prisma.organization.findUnique({ where: { slug: 'demo-pme' } });
+    results.org = org;
+  } catch (e) { results.orgError = String(e); }
+
+  try {
+    const user = await prisma.user.findFirst({ where: { email: 'admin@demo.com' }, select: { id: true, email: true, isActive: true, avatar: true } });
+    results.user = user;
+  } catch (e) { results.userError = String(e); }
+
+  res.json(results);
 });
 
 const api = '/api/v1';
