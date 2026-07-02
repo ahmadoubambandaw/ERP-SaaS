@@ -18,6 +18,8 @@ import ProjectsPage from './pages/projects/Projects';
 import ProjectDetailPage from './pages/projects/ProjectDetail';
 import AccountingPage from './pages/accounting/Accounting';
 import SettingsPage from './pages/settings/Settings';
+import WarehousesPage from './pages/inventory/Warehouses';
+import LeavesPage from './pages/hr/Leaves';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -52,11 +54,13 @@ export default function App() {
           <Route path="inventory">
             <Route index element={<ProductsPage />} />
             <Route path="movements" element={<StockMovementsPage />} />
+            <Route path="warehouses" element={<WarehousesPage />} />
           </Route>
 
           <Route path="hr">
             <Route index element={<EmployeesPage />} />
             <Route path="payroll" element={<PayrollPage />} />
+            <Route path="leaves" element={<LeavesPage />} />
           </Route>
 
           <Route path="crm">
