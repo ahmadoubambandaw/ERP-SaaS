@@ -6,6 +6,7 @@ import RegisterPage from './pages/auth/Register';
 import DashboardPage from './pages/dashboard/Dashboard';
 import InvoicesPage from './pages/invoicing/Invoices';
 import InvoiceFormPage from './pages/invoicing/InvoiceForm';
+import InvoiceDetailPage from './pages/invoicing/InvoiceDetail';
 import CustomersPage from './pages/invoicing/Customers';
 import ProductsPage from './pages/inventory/Products';
 import StockMovementsPage from './pages/inventory/StockMovements';
@@ -43,6 +44,7 @@ export default function App() {
           <Route path="invoicing">
             <Route index element={<InvoicesPage />} />
             <Route path="new" element={<InvoiceFormPage />} />
+            <Route path=":id" element={<InvoiceDetailPage />} />
             <Route path=":id/edit" element={<InvoiceFormPage />} />
             <Route path="customers" element={<CustomersPage />} />
           </Route>

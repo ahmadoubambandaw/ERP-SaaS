@@ -1,0 +1,315 @@
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { invoicingService } from '../../services/api';
+import { formatCurrency, formatDate } from '../../utils/format';
+import { useAuthStore } from '../../store/auth.store';
+import StatusBadge from '../../components/ui/StatusBadge';
+
+const PAYMENT_METHODS = [
+  { value: 'CASH', label: 'Espèces' },
+  { value: 'BANK_TRANSFER', label: 'Virement bancaire' },
+  { value: 'ORANGE_MONEY', label: 'Orange Money' },
+  { value: 'WAVE', label: 'Wave' },
+  { value: 'MTN_MONEY', label: 'MTN Money' },
+  { value: 'FREE_MONEY', label: 'Free Money' },
+  { value: 'MOOV_MONEY', label: 'Moov Money' },
+  { value: 'CHECK', label: 'Chèque' },
+];
+
+const TYPE_LABELS: Record<string, string> = {
+  INVOICE: 'Facture',
+  QUOTE: 'Devis',
+  PROFORMA: 'Proforma',
+  CREDIT_NOTE: 'Avoir',
+};
+
+interface PaymentForm {
+  amount: number;
+  date: string;
+  method: string;
+  reference: string;
+  notes: string;
+}
+
+export default function InvoiceDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { organization } = useAuthStore();
+  const currency = organization?.currency || 'XOF';
+  const qc = useQueryClient();
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['invoice', id],
+    queryFn: () => invoicingService.get(id!),
+    enabled: !!id,
+  });
+
+  const inv = data?.data?.data as Record<string, unknown> | undefined;
+
+  const sendMutation = useMutation({
+    mutationFn: () => invoicingService.send(id!),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['invoice', id] }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: () => invoicingService.delete(id!),
+    onSuccess: () => navigate('/invoicing'),
+  });
+
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<PaymentForm>({
+    defaultValues: {
+      date: new Date().toISOString().split('T')[0],
+      method: 'CASH',
+      amount: 0,
+      reference: '',
+      notes: '',
+    },
+  });
+  const watchedAmount = watch('amount');
+
+  const paymentMutation = useMutation({
+    mutationFn: (data: PaymentForm) => invoicingService.addPayment(id!, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['invoice', id] });
+      qc.invalidateQueries({ queryKey: ['invoices'] });
+      setShowPaymentForm(false);
+      reset();
+    },
+  });
+
+  if (isLoading) return <div className="text-center py-20 text-gray-400">Chargement...</div>;
+  if (error || !inv) return (
+    <div className="text-center py-20">
+      <p className="text-gray-500">Facture introuvable</p>
+      <Link to="/invoicing" className="text-primary-600 hover:underline mt-2 inline-block">Retour aux factures</Link>
+    </div>
+  );
+
+  const customer = inv.customer as Record<string, unknown>;
+  const lines = (inv.lines as Record<string, unknown>[]) || [];
+  const payments = (inv.payments as Record<string, unknown>[]) || [];
+  const remaining = Number(inv.total) - Number(inv.paidAmount);
+  const isDraft = inv.status === 'DRAFT';
+  const isCancelled = inv.status === 'CANCELLED';
+  const isPaid = inv.status === 'PAID';
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/invoicing')} className="p-2 hover:bg-gray-100 rounded-lg">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900">{inv.number as string}</h1>
+              <span className="badge badge-blue">{TYPE_LABELS[inv.type as string] || inv.type as string}</span>
+              <StatusBadge status={inv.status as string} />
+            </div>
+            <p className="text-gray-500 text-sm mt-0.5">{customer?.name as string}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {isDraft && (
+            <>
+              <button
+                onClick={() => sendMutation.mutate()}
+                disabled={sendMutation.isPending}
+                className="btn-secondary flex items-center gap-2"
+              >
+                {sendMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Envoyer
+              </button>
+              <button
+                onClick={() => { if (confirm('Supprimer cette facture ?')) deleteMutation.mutate(); }}
+                className="p-2 hover:bg-red-50 text-red-500 rounded-lg"
+                title="Supprimer"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </>
+          )}
+          {!isPaid && !isCancelled && inv.status !== 'DRAFT' && (
+            <button
+              onClick={() => setShowPaymentForm(true)}
+              className="btn-primary flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Enregistrer un paiement
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Info cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="card p-4">
+          <p className="text-xs text-gray-500 mb-1">Date d'émission</p>
+          <p className="font-semibold">{formatDate(inv.issueDate as string)}</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-xs text-gray-500 mb-1">Échéance</p>
+          <p className="font-semibold">{formatDate(inv.dueDate as string)}</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-xs text-gray-500 mb-1">Montant total</p>
+          <p className="font-bold text-lg text-primary-600">{formatCurrency(inv.total as number, currency)}</p>
+        </div>
+        <div className="card p-4">
+          <p className="text-xs text-gray-500 mb-1">Reste à payer</p>
+          <p className={`font-bold text-lg ${remaining > 0 ? 'text-orange-500' : 'text-green-600'}`}>
+            {remaining <= 0 ? '✓ Soldé' : formatCurrency(remaining, currency)}
+          </p>
+        </div>
+      </div>
+
+      {/* Payment form */}
+      {showPaymentForm && (
+        <div className="card p-6 border-2 border-primary-100">
+          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <CreditCard className="w-5 h-5 text-primary-500" />
+            Enregistrer un paiement
+          </h3>
+          <form onSubmit={handleSubmit((d) => paymentMutation.mutate(d))} className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label className="label">Montant *</label>
+                <input
+                  {...register('amount', { required: true, valueAsNumber: true, min: 0.01, max: remaining })}
+                  type="number"
+                  step="1"
+                  min="0"
+                  max={remaining}
+                  className="input"
+                  placeholder={formatCurrency(remaining, currency)}
+                />
+                {errors.amount && <p className="text-xs text-red-500 mt-1">Montant invalide</p>}
+                {Number(watchedAmount) > remaining && (
+                  <p className="text-xs text-orange-500 mt-1">Supérieur au solde restant ({formatCurrency(remaining, currency)})</p>
+                )}
+              </div>
+              <div>
+                <label className="label">Date *</label>
+                <input {...register('date', { required: true })} type="date" className="input" />
+              </div>
+              <div>
+                <label className="label">Mode de paiement *</label>
+                <select {...register('method', { required: true })} className="input">
+                  {PAYMENT_METHODS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Référence</label>
+                <input {...register('reference')} className="input" placeholder="N° reçu, virement..." />
+              </div>
+              <div className="col-span-2">
+                <label className="label">Notes</label>
+                <input {...register('notes')} className="input" placeholder="Notes optionnelles" />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button type="button" onClick={() => { setShowPaymentForm(false); reset(); }} className="btn-secondary">Annuler</button>
+              <button type="submit" disabled={paymentMutation.isPending} className="btn-primary">
+                {paymentMutation.isPending ? 'Enregistrement...' : 'Enregistrer le paiement'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Lines */}
+      <div className="card">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h3 className="font-semibold text-gray-900">Lignes de facturation</h3>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="text-left px-6 py-3 font-medium text-gray-500">Description</th>
+              <th className="text-right px-6 py-3 font-medium text-gray-500 w-20">Qté</th>
+              <th className="text-right px-6 py-3 font-medium text-gray-500 w-32">Prix unit.</th>
+              <th className="text-right px-6 py-3 font-medium text-gray-500 w-20">TVA</th>
+              <th className="text-right px-6 py-3 font-medium text-gray-500 w-32">Total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {lines.map((line, i) => (
+              <tr key={i} className="hover:bg-gray-50">
+                <td className="px-6 py-3">{line.description as string}</td>
+                <td className="px-6 py-3 text-right text-gray-500">{Number(line.quantity).toLocaleString()}</td>
+                <td className="px-6 py-3 text-right text-gray-500">{formatCurrency(line.unitPrice as number, currency)}</td>
+                <td className="px-6 py-3 text-right text-gray-500">{Number(line.taxRate)}%</td>
+                <td className="px-6 py-3 text-right font-medium">{formatCurrency(line.total as number, currency)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot className="bg-gray-50">
+            <tr>
+              <td colSpan={4} className="px-6 py-3 text-right text-gray-500">Sous-total</td>
+              <td className="px-6 py-3 text-right font-medium">{formatCurrency(inv.subtotal as number, currency)}</td>
+            </tr>
+            <tr>
+              <td colSpan={4} className="px-6 py-3 text-right text-gray-500">TVA</td>
+              <td className="px-6 py-3 text-right font-medium">{formatCurrency(inv.taxAmount as number, currency)}</td>
+            </tr>
+            <tr className="border-t border-gray-200">
+              <td colSpan={4} className="px-6 py-3 text-right font-bold text-gray-900">Total</td>
+              <td className="px-6 py-3 text-right font-bold text-lg text-primary-600">{formatCurrency(inv.total as number, currency)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      {/* Payments history */}
+      {payments.length > 0 && (
+        <div className="card">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="font-semibold text-gray-900">Historique des paiements</h3>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left px-6 py-3 font-medium text-gray-500">Date</th>
+                <th className="text-left px-6 py-3 font-medium text-gray-500">Mode</th>
+                <th className="text-left px-6 py-3 font-medium text-gray-500">Référence</th>
+                <th className="text-right px-6 py-3 font-medium text-gray-500">Montant</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {payments.map((p) => (
+                <tr key={p.id as string} className="hover:bg-gray-50">
+                  <td className="px-6 py-3">{formatDate(p.date as string)}</td>
+                  <td className="px-6 py-3 text-gray-500">
+                    {PAYMENT_METHODS.find((m) => m.value === p.method)?.label || p.method as string}
+                  </td>
+                  <td className="px-6 py-3 text-gray-500 font-mono text-xs">{p.reference as string || '—'}</td>
+                  <td className="px-6 py-3 text-right font-semibold text-green-600">{formatCurrency(p.amount as number, currency)}</td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="bg-gray-50 border-t border-gray-200">
+              <tr>
+                <td colSpan={3} className="px-6 py-3 font-semibold text-gray-700">Total encaissé</td>
+                <td className="px-6 py-3 text-right font-bold text-green-600">{formatCurrency(inv.paidAmount as number, currency)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+
+      {/* Notes */}
+      {inv.notes && (
+        <div className="card p-6">
+          <h3 className="font-semibold text-gray-900 mb-2">Notes</h3>
+          <p className="text-gray-600 text-sm whitespace-pre-line">{inv.notes as string}</p>
+        </div>
+      )}
+    </div>
+  );
+}
