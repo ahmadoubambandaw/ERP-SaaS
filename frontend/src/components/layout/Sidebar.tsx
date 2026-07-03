@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, FileText, Package, Users, Briefcase, BarChart2,
+  LayoutDashboard, FileText, Package, Users, BarChart2, ShoppingCart,
   FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -23,6 +23,13 @@ const navItems = [
       { label: 'Produits', to: '/inventory' },
       { label: 'Mouvements', to: '/inventory/movements' },
       { label: 'Entrepôts', to: '/inventory/warehouses' },
+    ],
+  },
+  {
+    label: 'Achats', icon: ShoppingCart, to: '/purchasing',
+    children: [
+      { label: 'Bons de commande', to: '/purchasing' },
+      { label: 'Fournisseurs', to: '/purchasing/suppliers' },
     ],
   },
   {

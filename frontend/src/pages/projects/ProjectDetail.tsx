@@ -4,6 +4,7 @@ import { ArrowLeft, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { projectsService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import StatusBadge from '../../components/ui/StatusBadge';
 
 const taskStatuses = ['TODO', 'IN_PROGRESS', 'IN_REVIEW', 'DONE'];
@@ -15,6 +16,7 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const { register, handleSubmit, reset } = useForm();
 
   const { data, isLoading } = useQuery({ queryKey: ['project', id], queryFn: () => projectsService.get(id!) });
@@ -22,12 +24,14 @@ export default function ProjectDetailPage() {
 
   const createTask = useMutation({
     mutationFn: (d: unknown) => projectsService.createTask(id!, d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project', id] }); setShowTaskForm(false); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project', id] }); setShowTaskForm(false); setErrorMsg(''); reset(); },
+    onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la création de la tâche')),
   });
 
   const updateTask = useMutation({
     mutationFn: ({ taskId, data }: { taskId: string; data: unknown }) => projectsService.updateTask(id!, taskId, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['project', id] }),
+    onError: (err: unknown) => setErrorMsg(getApiError(err)),
   });
 
   if (isLoading) return <div className="text-center py-12 text-gray-400">Chargement...</div>;
@@ -60,6 +64,12 @@ export default function ProjectDetailPage() {
           <Plus className="w-4 h-4" /> Nouvelle tache
         </button>
       </div>
+
+      {errorMsg && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {errorMsg}
+        </div>
+      )}
 
       {showTaskForm && (
         <div className="card p-6">

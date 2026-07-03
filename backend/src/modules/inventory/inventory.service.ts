@@ -5,7 +5,9 @@ import { z } from 'zod';
 function clean(body: unknown): Record<string, unknown> {
   if (typeof body !== 'object' || body === null) return {};
   return Object.fromEntries(
-    Object.entries(body as Record<string, unknown>).filter(([, v]) => v !== '' && v !== null),
+    Object.entries(body as Record<string, unknown>).filter(
+      ([, v]) => v !== '' && v !== null && !(typeof v === 'number' && Number.isNaN(v)),
+    ),
   );
 }
 
@@ -146,6 +148,20 @@ export class InventoryService {
       data: { organizationId: orgId, supplierId: data.supplierId, number, orderDate: data.orderDate, expectedDate: data.expectedDate, total, notes: data.notes, lines: { create: lines } },
       include: { supplier: true, lines: { include: { product: true } } },
     });
+  }
+
+  async confirmPO(orgId: string, id: string) {
+    const po = await prisma.purchaseOrder.findFirst({ where: { id, organizationId: orgId } });
+    if (!po) throw new AppError('Bon de commande introuvable', 404);
+    if (po.status !== 'DRAFT') throw new AppError('Seul un brouillon peut etre confirme', 400);
+    return prisma.purchaseOrder.update({ where: { id }, data: { status: 'CONFIRMED' } });
+  }
+
+  async cancelPO(orgId: string, id: string) {
+    const po = await prisma.purchaseOrder.findFirst({ where: { id, organizationId: orgId } });
+    if (!po) throw new AppError('Bon de commande introuvable', 404);
+    if (po.status === 'RECEIVED') throw new AppError('Un bon de commande recu ne peut pas etre annule', 400);
+    return prisma.purchaseOrder.update({ where: { id }, data: { status: 'CANCELLED' } });
   }
 
   async receivePO(orgId: string, id: string) {

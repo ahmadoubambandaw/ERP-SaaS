@@ -2,6 +2,15 @@ import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
 
+function clean(body: unknown): Record<string, unknown> {
+  if (typeof body !== 'object' || body === null) return {};
+  return Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).filter(
+      ([, v]) => v !== '' && v !== null && !(typeof v === 'number' && Number.isNaN(v)),
+    ),
+  );
+}
+
 const customerSchema = z.object({
   type: z.enum(['COMPANY', 'INDIVIDUAL']).default('COMPANY'),
   name: z.string().min(1),
@@ -48,7 +57,7 @@ export class InvoicingService {
   }
 
   async createCustomer(orgId: string, body: unknown) {
-    const data = customerSchema.parse(body);
+    const data = customerSchema.parse(clean(body));
     return prisma.customer.create({ data: { ...data, organizationId: orgId } });
   }
 
@@ -60,7 +69,7 @@ export class InvoicingService {
 
   async updateCustomer(orgId: string, id: string, body: unknown) {
     await this.getCustomer(orgId, id);
-    const data = customerSchema.partial().parse(body);
+    const data = customerSchema.partial().parse(clean(body));
     return prisma.customer.update({ where: { id }, data });
   }
 
@@ -72,7 +81,7 @@ export class InvoicingService {
     const data = z.object({
       name: z.string().min(1), email: z.string().email().optional(), phone: z.string().optional(),
       address: z.string().optional(), country: z.string().optional(), taxId: z.string().optional(),
-    }).parse(body);
+    }).parse(clean(body));
     return prisma.supplier.create({ data: { ...data, organizationId: orgId } });
   }
 
@@ -156,7 +165,7 @@ export class InvoicingService {
     const inv = await this.getInvoice(orgId, invoiceId);
     if (['CANCELLED', 'PAID'].includes(inv.status)) throw new AppError('Cette facture ne peut plus recevoir de paiement', 400);
 
-    const data = paymentSchema.parse(body);
+    const data = paymentSchema.parse(clean(body));
     const payment = await prisma.payment.create({ data: { invoiceId, ...data } });
 
     const newPaid = Number(inv.paidAmount) + data.amount;

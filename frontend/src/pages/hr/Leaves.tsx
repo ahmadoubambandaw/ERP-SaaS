@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Check, Calendar, Clock } from 'lucide-react';
+import { Plus, Check, Calendar, Clock, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { hrService } from '../../services/api';
@@ -78,6 +78,11 @@ export default function LeavesPage() {
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => hrService.approveLeave(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['leaves'] }),
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (id: string) => hrService.rejectLeave(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['leaves'] }),
   });
 
@@ -247,13 +252,22 @@ export default function LeavesPage() {
                   </td>
                   <td className="px-6 py-4">
                     {l.status === 'PENDING' && (
-                      <button
-                        onClick={() => approveMutation.mutate(l.id)}
-                        title="Approuver"
-                        className="p-1.5 hover:bg-green-50 text-green-600 rounded transition-colors"
-                      >
-                        <Check className="w-4 h-4" />
-                      </button>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => approveMutation.mutate(l.id)}
+                          title="Approuver"
+                          className="p-1.5 hover:bg-green-50 text-green-600 rounded transition-colors"
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => rejectMutation.mutate(l.id)}
+                          title="Refuser"
+                          className="p-1.5 hover:bg-red-50 text-red-500 rounded transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
                   </td>
                 </tr>
