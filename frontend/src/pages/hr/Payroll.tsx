@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Play, Check } from 'lucide-react';
+import { Play, Check, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { hrService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import { formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -10,6 +11,7 @@ export default function PayrollPage() {
   const { organization } = useAuthStore();
   const currency = organization?.currency || 'XOF';
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
+  const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({ queryKey: ['payslips', period], queryFn: () => hrService.payslips(period) });
@@ -17,12 +19,14 @@ export default function PayrollPage() {
 
   const generateMutation = useMutation({
     mutationFn: () => hrService.generatePayslips(period),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['payslips'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['payslips'] }); setErrorMsg(''); },
+    onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la génération de la paie')),
   });
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => hrService.approvePayslip(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['payslips'] }),
+    onError: (err: unknown) => setErrorMsg(getApiError(err)),
   });
 
   const totalNet = payslips.reduce((s: number, p: Record<string, unknown>) => s + Number(p.netSalary), 0);
@@ -36,11 +40,19 @@ export default function PayrollPage() {
         </div>
         <div className="flex items-center gap-3">
           <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="input w-40" />
-          <button onClick={() => generateMutation.mutate()} className="btn-primary flex items-center gap-2">
-            <Play className="w-4 h-4" /> Generer la paie
+          <button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending} className="btn-primary flex items-center gap-2">
+            {generateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+            {generateMutation.isPending ? 'Génération...' : 'Générer la paie'}
           </button>
         </div>
       </div>
+
+      {errorMsg && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between">
+          <span>{errorMsg}</span>
+          <button onClick={() => setErrorMsg('')} className="text-red-400 hover:text-red-600"><X className="w-4 h-4" /></button>
+        </div>
+      )}
 
       {payslips.length > 0 && (
         <div className="grid grid-cols-3 gap-4">

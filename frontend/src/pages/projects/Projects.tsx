@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, FolderKanban } from 'lucide-react';
+import { Plus, FolderKanban, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { projectsService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -12,6 +13,7 @@ export default function ProjectsPage() {
   const { organization } = useAuthStore();
   const currency = organization?.currency || 'XOF';
   const [showForm, setShowForm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
   const { register, handleSubmit, reset } = useForm();
 
@@ -20,7 +22,8 @@ export default function ProjectsPage() {
 
   const mutation = useMutation({
     mutationFn: (d: unknown) => projectsService.create(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['projects'] }); setShowForm(false); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['projects'] }); setShowForm(false); setErrorMsg(''); reset(); },
+    onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la création du projet')),
   });
 
   return (
@@ -38,6 +41,11 @@ export default function ProjectsPage() {
       {showForm && (
         <div className="card p-6">
           <h3 className="font-semibold mb-4">Nouveau projet</h3>
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-3 gap-4">
             <div className="col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
             <div><label className="label">Statut</label>
@@ -51,8 +59,11 @@ export default function ProjectsPage() {
             <div><label className="label">Budget</label><input {...register('budget', { valueAsNumber: true })} type="number" className="input" /></div>
             <div className="col-span-3"><label className="label">Description</label><textarea {...register('description')} className="input h-20 resize-none" /></div>
             <div className="col-span-3 flex gap-3 justify-end">
-              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Annuler</button>
-              <button type="submit" className="btn-primary">Enregistrer</button>
+              <button type="button" onClick={() => { setShowForm(false); setErrorMsg(''); reset(); }} className="btn-secondary">Annuler</button>
+              <button type="submit" disabled={mutation.isPending} className="btn-primary flex items-center gap-2">
+                {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {mutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
             </div>
           </form>
         </div>

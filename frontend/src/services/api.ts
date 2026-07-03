@@ -86,6 +86,7 @@ export const invoicingService = {
   customers: () => api.get('/invoicing/customers'),
   createCustomer: (data: unknown) => api.post('/invoicing/customers', data),
   suppliers: () => api.get('/invoicing/suppliers'),
+  createSupplier: (data: unknown) => api.post('/invoicing/suppliers', data),
 };
 
 export const inventoryService = {
@@ -98,6 +99,11 @@ export const inventoryService = {
   lowStock: () => api.get('/inventory/low-stock'),
   movements: () => api.get('/inventory/movements'),
   createMovement: (data: unknown) => api.post('/inventory/movements', data),
+  purchaseOrders: () => api.get('/inventory/purchase-orders'),
+  createPurchaseOrder: (data: unknown) => api.post('/inventory/purchase-orders', data),
+  confirmPurchaseOrder: (id: string) => api.patch(`/inventory/purchase-orders/${id}/confirm`),
+  cancelPurchaseOrder: (id: string) => api.patch(`/inventory/purchase-orders/${id}/cancel`),
+  receivePurchaseOrder: (id: string) => api.patch(`/inventory/purchase-orders/${id}/receive`),
 };
 
 export const hrService = {
@@ -110,6 +116,14 @@ export const hrService = {
   leaves: () => api.get('/hr/leaves'),
   createLeave: (data: unknown) => api.post('/hr/leaves', data),
   approveLeave: (id: string) => api.patch(`/hr/leaves/${id}/approve`),
+  rejectLeave: (id: string) => api.patch(`/hr/leaves/${id}/reject`),
+};
+
+export const usersService = {
+  list: () => api.get('/users'),
+  create: (data: unknown) => api.post('/users', data),
+  update: (id: string, data: unknown) => api.patch(`/users/${id}`, data),
+  remove: (id: string) => api.delete(`/users/${id}`),
 };
 
 export const crmService = {

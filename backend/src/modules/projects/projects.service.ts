@@ -2,6 +2,15 @@ import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
 
+function clean(body: unknown): Record<string, unknown> {
+  if (typeof body !== 'object' || body === null) return {};
+  return Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).filter(
+      ([, v]) => v !== '' && v !== null && !(typeof v === 'number' && Number.isNaN(v)),
+    ),
+  );
+}
+
 const projectSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -34,7 +43,7 @@ export class ProjectsService {
   }
 
   async createProject(orgId: string, body: unknown) {
-    const data = projectSchema.parse(body);
+    const data = projectSchema.parse(clean(body));
     return prisma.project.create({ data: { ...data, organizationId: orgId } });
   }
 
@@ -53,7 +62,7 @@ export class ProjectsService {
 
   async updateProject(orgId: string, id: string, body: unknown) {
     await this.getProject(orgId, id);
-    const data = projectSchema.partial().merge(z.object({ progress: z.number().int().min(0).max(100).optional() })).parse(body);
+    const data = projectSchema.partial().merge(z.object({ progress: z.number().int().min(0).max(100).optional() })).parse(clean(body));
     return prisma.project.update({ where: { id }, data });
   }
 
@@ -68,7 +77,7 @@ export class ProjectsService {
 
   async createTask(orgId: string, projectId: string, body: unknown) {
     await this.getProject(orgId, projectId);
-    const data = taskSchema.parse(body);
+    const data = taskSchema.parse(clean(body));
     return prisma.task.create({ data: { ...data, projectId } });
   }
 
@@ -76,7 +85,7 @@ export class ProjectsService {
     await this.getProject(orgId, projectId);
     const task = await prisma.task.findFirst({ where: { id, projectId } });
     if (!task) throw new AppError('Tache introuvable', 404);
-    const data = taskSchema.partial().parse(body);
+    const data = taskSchema.partial().parse(clean(body));
     const updated = await prisma.task.update({ where: { id }, data: { ...data, ...(data.status === 'DONE' ? { completedAt: new Date() } : {}) } });
 
     const tasks = await prisma.task.findMany({ where: { projectId } });

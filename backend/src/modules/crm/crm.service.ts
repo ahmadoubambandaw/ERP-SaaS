@@ -2,6 +2,15 @@ import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
 
+function clean(body: unknown): Record<string, unknown> {
+  if (typeof body !== 'object' || body === null) return {};
+  return Object.fromEntries(
+    Object.entries(body as Record<string, unknown>).filter(
+      ([, v]) => v !== '' && v !== null && !(typeof v === 'number' && Number.isNaN(v)),
+    ),
+  );
+}
+
 const leadSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
@@ -33,7 +42,7 @@ export class CrmService {
   }
 
   async createLead(orgId: string, body: unknown) {
-    const data = leadSchema.parse(body);
+    const data = leadSchema.parse(clean(body));
     return prisma.lead.create({ data: { ...data, organizationId: orgId } });
   }
 
@@ -45,7 +54,7 @@ export class CrmService {
 
   async updateLead(orgId: string, id: string, body: unknown) {
     await this.getLead(orgId, id);
-    const data = leadSchema.partial().merge(z.object({ status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'CONVERTED']).optional() })).parse(body);
+    const data = leadSchema.partial().merge(z.object({ status: z.enum(['NEW', 'CONTACTED', 'QUALIFIED', 'UNQUALIFIED', 'CONVERTED']).optional() })).parse(clean(body));
     return prisma.lead.update({ where: { id }, data });
   }
 
@@ -73,7 +82,7 @@ export class CrmService {
   }
 
   async createOpportunity(orgId: string, body: unknown) {
-    const data = opportunitySchema.parse(body);
+    const data = opportunitySchema.parse(clean(body));
     return prisma.opportunity.create({ data: { ...data, organizationId: orgId } });
   }
 
@@ -85,7 +94,7 @@ export class CrmService {
 
   async updateOpportunity(orgId: string, id: string, body: unknown) {
     await this.getOpportunity(orgId, id);
-    const data = opportunitySchema.partial().parse(body);
+    const data = opportunitySchema.partial().parse(clean(body));
     return prisma.opportunity.update({ where: { id }, data });
   }
 

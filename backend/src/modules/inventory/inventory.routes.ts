@@ -24,4 +24,6 @@ inventoryRouter.post('/movements', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl
 
 inventoryRouter.get('/purchase-orders', ctrl.listPOs);
 inventoryRouter.post('/purchase-orders', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl.createPO);
+inventoryRouter.patch('/purchase-orders/:id/confirm', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl.confirmPO);
+inventoryRouter.patch('/purchase-orders/:id/cancel', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl.cancelPO);
 inventoryRouter.patch('/purchase-orders/:id/receive', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl.receivePO);

@@ -28,9 +28,18 @@ const statusConfig: Record<string, { label: string; class: string }> = {
   PENDING: { label: 'En attente', class: 'badge-yellow' },
   APPROVED: { label: 'Approuve', class: 'badge-green' },
   REJECTED: { label: 'Rejete', class: 'badge-red' },
+  CONFIRMED: { label: 'Confirme', class: 'badge-blue' },
+  RECEIVED: { label: 'Recu', class: 'badge-green' },
+  POSTED: { label: 'Comptabilise', class: 'badge-green' },
+  PROSPECTING: { label: 'Prospection', class: 'badge-gray' },
+  QUALIFICATION: { label: 'Qualification', class: 'badge-blue' },
+  PROPOSAL: { label: 'Proposition', class: 'badge-yellow' },
+  NEGOTIATION: { label: 'Negociation', class: 'badge-yellow' },
+  CLOSED_WON: { label: 'Gagne', class: 'badge-green' },
+  CLOSED_LOST: { label: 'Perdu', class: 'badge-red' },
 };
 
-export default function StatusBadge({ status }: { status: string }) {
+export default function StatusBadge({ status, label }: { status: string; label?: string }) {
   const config = statusConfig[status] || { label: status, class: 'badge-gray' };
-  return <span className={clsx('badge', config.class)}>{config.label}</span>;
+  return <span className={clsx('badge', config.class)}>{label || config.label}</span>;
 }

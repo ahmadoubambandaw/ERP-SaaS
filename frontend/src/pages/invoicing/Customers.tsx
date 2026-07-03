@@ -1,11 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Users } from 'lucide-react';
+import { Plus, Users, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { invoicingService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 
 export default function CustomersPage() {
   const [showForm, setShowForm] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
   const { register, handleSubmit, reset } = useForm();
 
@@ -14,7 +16,8 @@ export default function CustomersPage() {
 
   const mutation = useMutation({
     mutationFn: (data: unknown) => invoicingService.createCustomer(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); setShowForm(false); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); setShowForm(false); setErrorMsg(''); reset(); },
+    onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de l\'enregistrement du client')),
   });
 
   return (
@@ -29,6 +32,11 @@ export default function CustomersPage() {
       {showForm && (
         <div className="card p-6">
           <h3 className="font-semibold mb-4">Nouveau client</h3>
+          {errorMsg && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {errorMsg}
+            </div>
+          )}
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-3 gap-4">
             <div><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
             <div><label className="label">Email</label><input {...register('email')} type="email" className="input" /></div>
@@ -42,8 +50,11 @@ export default function CustomersPage() {
               </select>
             </div>
             <div className="col-span-3 flex gap-3 justify-end">
-              <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Annuler</button>
-              <button type="submit" className="btn-primary">Enregistrer</button>
+              <button type="button" onClick={() => { setShowForm(false); setErrorMsg(''); reset(); }} className="btn-secondary">Annuler</button>
+              <button type="submit" disabled={mutation.isPending} className="btn-primary flex items-center gap-2">
+                {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                {mutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
             </div>
           </form>
         </div>

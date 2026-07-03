@@ -42,6 +42,12 @@ export class InventoryController {
   createPO = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { sendSuccess(res, await service.createPO(req.user!.organizationId, req.body), 'Bon de commande cree', 201); } catch (e) { next(e); }
   };
+  confirmPO = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try { sendSuccess(res, await service.confirmPO(req.user!.organizationId, req.params.id)); } catch (e) { next(e); }
+  };
+  cancelPO = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try { sendSuccess(res, await service.cancelPO(req.user!.organizationId, req.params.id)); } catch (e) { next(e); }
+  };
   receivePO = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { sendSuccess(res, await service.receivePO(req.user!.organizationId, req.params.id)); } catch (e) { next(e); }
   };

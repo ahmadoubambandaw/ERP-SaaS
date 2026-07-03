@@ -5,7 +5,9 @@ import { z } from 'zod';
 function clean(body: unknown): Record<string, unknown> {
   if (typeof body !== 'object' || body === null) return {};
   return Object.fromEntries(
-    Object.entries(body as Record<string, unknown>).filter(([, v]) => v !== '' && v !== null),
+    Object.entries(body as Record<string, unknown>).filter(
+      ([, v]) => v !== '' && v !== null && !(typeof v === 'number' && Number.isNaN(v)),
+    ),
   );
 }
 
