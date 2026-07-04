@@ -26,6 +26,7 @@ interface PdfOrganization {
   email?: string | null;
   taxId?: string | null;
   currency?: string;
+  logo?: string | null;
 }
 
 interface PdfInvoice {
@@ -65,16 +66,29 @@ export function generateInvoicePdf(inv: PdfInvoice, fallbackOrgName?: string) {
   doc.setFillColor(17, 24, 39); // gray-900
   doc.rect(0, 0, pageWidth, 34, 'F');
 
+  // Logo (white rounded tile so any logo stays readable on the dark band)
+  let textX = margin;
+  if (org.logo) {
+    try {
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(margin, 6, 22, 22, 2, 2, 'F');
+      doc.addImage(org.logo, margin + 2, 8, 18, 18);
+      textX = margin + 27;
+    } catch {
+      textX = margin; // corrupt image data: fall back to text-only header
+    }
+  }
+
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text(orgName, margin, 15);
+  doc.text(orgName, textX, 13);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8.5);
   const orgLines = [org.address, org.phone, org.email, org.taxId ? `NINEA/NIF : ${org.taxId}` : null]
     .filter(Boolean) as string[];
-  orgLines.forEach((line, i) => doc.text(line, margin, 21 + i * 4));
+  orgLines.forEach((line, i) => doc.text(line, textX, 19 + i * 4));
 
   // Document type + number (right side)
   doc.setFont('helvetica', 'bold');

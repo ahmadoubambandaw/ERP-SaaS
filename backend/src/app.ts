@@ -14,6 +14,7 @@ import { hrRouter } from './modules/hr/hr.routes';
 import { crmRouter } from './modules/crm/crm.routes';
 import { projectsRouter } from './modules/projects/projects.routes';
 import { dashboardRouter } from './modules/dashboard/dashboard.routes';
+import { organizationRouter } from './modules/organization/organization.routes';
 import { prisma } from './utils/prisma';
 
 const app = express();
@@ -59,6 +60,7 @@ app.use(`${api}/hr`, hrRouter);
 app.use(`${api}/crm`, crmRouter);
 app.use(`${api}/projects`, projectsRouter);
 app.use(`${api}/dashboard`, dashboardRouter);
+app.use(`${api}/organization`, organizationRouter);
 
 app.use(errorMiddleware);
 

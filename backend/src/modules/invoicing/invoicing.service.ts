@@ -147,7 +147,7 @@ export class InvoicingService {
         lines: { include: { product: true }, orderBy: { sortOrder: 'asc' } },
         payments: true,
         createdBy: { select: { firstName: true, lastName: true } },
-        organization: { select: { name: true, address: true, phone: true, email: true, taxId: true, currency: true, country: true } },
+        organization: { select: { name: true, address: true, phone: true, email: true, taxId: true, currency: true, country: true, logo: true } },
       },
     });
     if (!inv) throw new AppError('Facture introuvable', 404);

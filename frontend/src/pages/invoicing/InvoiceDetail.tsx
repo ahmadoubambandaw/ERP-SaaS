@@ -66,7 +66,7 @@ interface Invoice {
   payments: InvoicePayment[];
   organization?: {
     name?: string; address?: string; phone?: string;
-    email?: string; taxId?: string; currency?: string;
+    email?: string; taxId?: string; currency?: string; logo?: string;
   };
 }
 

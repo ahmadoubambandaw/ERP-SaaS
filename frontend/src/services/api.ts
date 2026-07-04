@@ -121,6 +121,11 @@ export const hrService = {
   rejectLeave: (id: string) => api.patch(`/hr/leaves/${id}/reject`),
 };
 
+export const organizationService = {
+  get: () => api.get('/organization'),
+  update: (data: unknown) => api.patch('/organization', data),
+};
+
 export const usersService = {
   list: () => api.get('/users'),
   create: (data: unknown) => api.post('/users', data),
