@@ -1,9 +1,36 @@
 import { Link } from 'react-router-dom';
 import {
   Building2, BarChart2, FileText, Package, Users, TrendingUp, FolderKanban,
-  Smartphone, ShieldCheck, Globe, Check, ArrowRight, Menu, X,
+  Smartphone, ShieldCheck, Globe, Check, ArrowRight, Menu, X, Star, MessageCircle,
+  Store, Utensils, Wrench, Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
+
+// Numéro WhatsApp de contact (format international sans +)
+const WHATSAPP = '221774140900';
+const WHATSAPP_MSG = encodeURIComponent('Bonjour, je souhaite en savoir plus sur votre ERP pour ma PME.');
+
+const TESTIMONIALS = [
+  {
+    name: 'Awa D.', role: 'Boutique de prêt-à-porter, Dakar',
+    text: "Avant je notais tout dans un cahier. Maintenant je fais mes factures en 2 minutes et je connais mon stock en temps réel. Un gain de temps énorme.",
+  },
+  {
+    name: 'Moussa S.', role: 'Quincaillerie, Thiès',
+    text: "L'alerte de stock bas m'a évité plusieurs ruptures. Et je vois enfin qui me doit de l'argent. Indispensable.",
+  },
+  {
+    name: 'Fatou N.', role: 'Institut de beauté, Rufisque',
+    text: "La paie de mes employées se calcule toute seule. Mes bulletins sont propres et professionnels. Je recommande à toutes les gérantes.",
+  },
+];
+
+const AUDIENCES = [
+  { icon: Store, label: 'Boutiques & Commerces', desc: 'Mode, bijoux, électronique, alimentation' },
+  { icon: Utensils, label: 'Restaurants & Traiteurs', desc: 'Stock, achats, personnel, caisse' },
+  { icon: Wrench, label: 'Quincailleries & Négoce', desc: 'Gros volumes, fournisseurs, entrepôts' },
+  { icon: Sparkles, label: 'Services & Instituts', desc: 'Beauté, conseil, artisanat, prestations' },
+];
 
 const FEATURES = [
   {
@@ -219,6 +246,56 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== Pour qui ? ===== */}
+      <section className="max-w-6xl mx-auto px-4 md:px-6 py-20">
+        <div className="text-center mb-14">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Pour qui ?</h2>
+          <p className="text-gray-500 mt-3 max-w-xl mx-auto">
+            Pensé pour les petites et moyennes entreprises africaines, quel que soit votre secteur.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {AUDIENCES.map((a) => {
+            const Icon = a.icon;
+            return (
+              <div key={a.label} className="text-center px-4">
+                <div className="w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Icon className="w-6 h-6 text-primary-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900">{a.label}</h3>
+                <p className="text-sm text-gray-500 mt-1">{a.desc}</p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ===== Témoignages ===== */}
+      <section className="bg-gray-50 border-y border-gray-100">
+        <div className="max-w-6xl mx-auto px-4 md:px-6 py-20">
+          <div className="text-center mb-14">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Ils nous font confiance</h2>
+            <p className="text-gray-500 mt-3">Des entrepreneurs qui ont abandonné le cahier.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t) => (
+              <div key={t.name} className="card p-6 flex flex-col">
+                <div className="flex gap-0.5 mb-3">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-sm text-gray-600 leading-relaxed flex-1">« {t.text} »</p>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="font-semibold text-gray-900 text-sm">{t.name}</p>
+                  <p className="text-xs text-gray-400">{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ===== Pricing ===== */}
       <section id="tarifs" className="max-w-6xl mx-auto px-4 md:px-6 py-20">
         <div className="text-center mb-14">
@@ -294,6 +371,18 @@ export default function LandingPage() {
           <p>© {new Date().getFullYear()} ERP SaaS — Fait pour l'Afrique 🌍</p>
         </div>
       </footer>
+
+      {/* ===== Bouton WhatsApp flottant ===== */}
+      <a
+        href={`https://wa.me/${WHATSAPP}?text=${WHATSAPP_MSG}`}
+        target="_blank"
+        rel="noreferrer"
+        aria-label="Contacter sur WhatsApp"
+        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white pl-3 pr-4 py-3 rounded-full shadow-lg transition-colors"
+      >
+        <MessageCircle className="w-6 h-6" />
+        <span className="hidden sm:inline font-medium text-sm">Discuter sur WhatsApp</span>
+      </a>
     </div>
   );
 }
