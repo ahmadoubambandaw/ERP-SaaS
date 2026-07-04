@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'ERP SaaS - PME Africaines',
-        short_name: 'ERP SaaS',
-        description: 'ERP modulaire pour les PME africaines : comptabilité SYSCOHADA, facturation, stocks, RH, paie, CRM et projets',
+        name: 'Naatal — Naatal sa liggéey',
+        short_name: 'Naatal',
+        description: 'Naatal — le logiciel qui fait prospérer votre activité : comptabilité SYSCOHADA, facturation, stocks, RH, paie, CRM et projets pour PME africaines',
         lang: 'fr',
         start_url: '/',
         scope: '/',

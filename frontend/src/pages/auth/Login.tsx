@@ -41,8 +41,9 @@ export default function LoginPage() {
           <div className="w-16 h-16 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">ERP SaaS</h1>
-          <p className="text-gray-400 mt-2">Solution de gestion pour les PME africaines</p>
+          <h1 className="text-3xl font-bold text-white">Naatal</h1>
+          <p className="text-gray-300 mt-2 font-medium">Naatal sa liggéey</p>
+          <p className="text-gray-400 text-sm">Faites prospérer votre activité</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-2xl p-8">

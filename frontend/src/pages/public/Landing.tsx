@@ -107,7 +107,7 @@ export default function LandingPage() {
             <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center">
               <Building2 className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-gray-900 text-lg">ERP SaaS</span>
+            <span className="font-bold text-gray-900 text-lg">Naatal</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-sm text-gray-600">
@@ -151,11 +151,14 @@ export default function LandingPage() {
             <Globe className="w-3.5 h-3.5" /> Conçu pour les PME africaines
           </span>
           <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight max-w-3xl mx-auto">
-            Gérez toute votre entreprise depuis une seule application
+            Naatal sa liggéey
           </h1>
-          <p className="text-gray-300 text-lg mt-6 max-w-2xl mx-auto">
-            Comptabilité SYSCOHADA, facturation avec Mobile Money, stocks, paie et CRM —
-            simple, en français, accessible sur téléphone.
+          <p className="text-primary-200 text-lg md:text-xl mt-4 font-medium">
+            Faites prospérer votre activité
+          </p>
+          <p className="text-gray-300 text-base mt-5 max-w-2xl mx-auto">
+            Naatal réunit comptabilité SYSCOHADA, facturation Mobile Money, stocks, paie et CRM —
+            simple, en français, accessible depuis votre téléphone.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
             <Link to="/register" className="btn-primary text-base px-8 py-3 flex items-center gap-2 w-full sm:w-auto justify-center">
@@ -360,7 +363,7 @@ export default function LandingPage() {
             <div className="w-7 h-7 bg-primary-600 rounded-lg flex items-center justify-center">
               <Building2 className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold text-gray-600">ERP SaaS</span>
+            <span className="font-semibold text-gray-600">Naatal</span>
           </div>
           <div className="flex items-center gap-6">
             <FolderKanban className="hidden" />
@@ -368,7 +371,7 @@ export default function LandingPage() {
             <a href="#tarifs" className="hover:text-gray-600">Tarifs</a>
             <Link to="/login" className="hover:text-gray-600">Connexion</Link>
           </div>
-          <p>© {new Date().getFullYear()} ERP SaaS — Fait pour l'Afrique 🌍</p>
+          <p>© {new Date().getFullYear()} Naatal · Ndaw-Tech — Fait au Sénégal 🇸🇳</p>
         </div>
       </footer>
 
