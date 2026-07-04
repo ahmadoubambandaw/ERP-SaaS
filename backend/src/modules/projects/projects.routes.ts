@@ -3,11 +3,12 @@ import { ProjectsController } from './projects.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
 import { subscriptionGuard } from '../../middleware/subscription.middleware';
+import { requireModule } from '../../middleware/plan.middleware';
 
 export const projectsRouter = Router();
 const ctrl = new ProjectsController();
 
-projectsRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
+projectsRouter.use(authenticate, tenantMiddleware, subscriptionGuard, requireModule('projects'));
 
 projectsRouter.get('/', ctrl.listProjects);
 projectsRouter.post('/', ctrl.createProject);

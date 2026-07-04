@@ -1,6 +1,8 @@
 import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { clearSubscriptionCache } from '../../middleware/subscription.middleware';
+import { clearPlanCache } from '../../middleware/plan.middleware';
+import { PLAN_MODULES, planUserLimit } from '../../config/plans';
 import { z } from 'zod';
 
 export class SubscriptionService {
@@ -23,6 +25,8 @@ export class SubscriptionService {
       unlimited: expiresAt === null,
       active: expiresAt === null || expiresAt.getTime() >= now,
       daysLeft,
+      modules: PLAN_MODULES[org.plan] || PLAN_MODULES.STARTER,
+      userLimit: planUserLimit(org.plan),
     };
   }
 
@@ -80,6 +84,7 @@ export class SubscriptionService {
     });
 
     clearSubscriptionCache(id);
+    clearPlanCache(id);
     return updated;
   }
 }
