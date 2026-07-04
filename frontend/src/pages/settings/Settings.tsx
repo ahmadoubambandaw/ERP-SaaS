@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone } from 'lucide-react';
+import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone, Palette, Check } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -8,6 +8,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { getApiError } from '../../utils/apiError';
 import { useAuthStore } from '../../store/auth.store';
 import { PLAN_LABELS, PLAN_PRICES, PAYMENT_NUMBER, PAYMENT_NAME, formatDateFr } from '../../utils/subscription';
+import { THEMES, applyTheme, getCurrentTheme } from '../../utils/theme';
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: 'Super Admin',
@@ -128,6 +129,9 @@ export default function SettingsPage() {
   // ===== Désactivation (confirmation) =====
   const [toToggle, setToToggle] = useState<OrgUser | null>(null);
 
+  // ===== Apparence =====
+  const [theme, setTheme] = useState(getCurrentTheme());
+
   // ===== Organisation =====
   const [orgError, setOrgError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -210,6 +214,30 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
+
+      {/* ===== Apparence ===== */}
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Palette className="w-5 h-5 text-primary-600" />
+          <h2 className="font-semibold text-gray-900">Apparence</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">Choisissez la couleur principale de votre espace.</p>
+        <div className="flex flex-wrap gap-3">
+          {THEMES.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => { applyTheme(t.id); setTheme(t.id); }}
+              className={`flex items-center gap-2 pl-2 pr-3 py-2 rounded-xl border-2 transition-colors ${
+                theme === t.id ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <span className="w-6 h-6 rounded-full flex-shrink-0" style={{ backgroundColor: t.swatch }} />
+              <span className="text-sm font-medium text-gray-700">{t.label}</span>
+              {theme === t.id && <Check className="w-4 h-4 text-primary-600" />}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-6">
