@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, User, Users, Plus, Loader2, UserX, UserCheck } from 'lucide-react';
-import { useState } from 'react';
+import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { usersService } from '../../services/api';
+import { usersService, organizationService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -26,6 +26,23 @@ interface UserFormData {
   email: string;
   password: string;
   role: string;
+}
+
+interface OrgFormData {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  taxId: string;
+}
+
+interface OrgDetails extends OrgFormData {
+  id: string;
+  slug: string;
+  country: string;
+  currency: string;
+  language: string;
+  logo?: string | null;
 }
 
 interface OrgUser {
@@ -73,6 +90,73 @@ export default function SettingsPage() {
     onError: (err: unknown) => setErrorMsg(getApiError(err)),
   });
 
+  // ===== Organisation =====
+  const [orgError, setOrgError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    register: orgRegister,
+    handleSubmit: orgHandleSubmit,
+    reset: orgReset,
+  } = useForm<OrgFormData>();
+
+  const { data: orgData } = useQuery({
+    queryKey: ['organization'],
+    queryFn: () => organizationService.get(),
+  });
+  const orgDetails: OrgDetails | undefined = orgData?.data?.data;
+
+  useEffect(() => {
+    if (orgDetails) {
+      orgReset({
+        name: orgDetails.name || '',
+        address: orgDetails.address || '',
+        phone: orgDetails.phone || '',
+        email: orgDetails.email || '',
+        taxId: orgDetails.taxId || '',
+      });
+    }
+  }, [orgDetails, orgReset]);
+
+  const orgMutation = useMutation({
+    mutationFn: (d: Partial<OrgFormData> & { logo?: string | null }) => organizationService.update(d),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['organization'] });
+      setOrgError('');
+      toast.success('Informations de l\'entreprise enregistrées');
+      const updated = res?.data?.data;
+      const current = useAuthStore.getState().organization;
+      if (updated && current) {
+        useAuthStore.setState({ organization: { ...current, name: updated.name, logo: updated.logo || undefined } });
+      }
+    },
+    onError: (err: unknown) => setOrgError(getApiError(err)),
+  });
+
+  const handleLogoFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      setOrgError('Veuillez choisir une image (PNG, JPG...)');
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      // resize to max 256px, keep ratio, export compact PNG
+      const max = 256;
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      orgMutation.mutate({ logo: canvas.toDataURL('image/png') });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      setOrgError('Impossible de lire cette image');
+    };
+    img.src = url;
+  };
+
   return (
     <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
@@ -80,15 +164,98 @@ export default function SettingsPage() {
       <div className="card p-6">
         <div className="flex items-center gap-3 mb-6">
           <Building2 className="w-5 h-5 text-primary-600" />
-          <h2 className="font-semibold text-gray-900">Organisation</h2>
+          <h2 className="font-semibold text-gray-900">Entreprise</h2>
+          {!isAdmin && <span className="badge badge-gray">Lecture seule</span>}
         </div>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div><p className="text-gray-500">Nom</p><p className="font-medium mt-1">{organization?.name}</p></div>
-          <div><p className="text-gray-500">Identifiant</p><p className="font-mono font-medium mt-1">{organization?.slug}</p></div>
-          <div><p className="text-gray-500">Pays</p><p className="font-medium mt-1">{organization?.country}</p></div>
-          <div><p className="text-gray-500">Devise</p><p className="font-medium mt-1">{organization?.currency}</p></div>
-          <div><p className="text-gray-500">Langue</p><p className="font-medium mt-1">{organization?.language === 'fr' ? 'Français' : 'English'}</p></div>
+
+        {orgError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+            {orgError}
+          </div>
+        )}
+
+        {/* Logo */}
+        <div className="flex items-center gap-4 mb-6">
+          {orgDetails?.logo ? (
+            <img src={orgDetails.logo} alt="Logo" className="w-16 h-16 rounded-xl object-contain border border-gray-200 bg-white" />
+          ) : (
+            <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center">
+              <Building2 className="w-7 h-7 text-gray-300" />
+            </div>
+          )}
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleLogoFile(f);
+                  e.target.value = '';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={orgMutation.isPending}
+                className="btn-secondary text-sm flex items-center gap-2"
+              >
+                {orgMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                {orgDetails?.logo ? 'Changer le logo' : 'Ajouter un logo'}
+              </button>
+              {orgDetails?.logo && (
+                <button
+                  type="button"
+                  onClick={() => orgMutation.mutate({ logo: null })}
+                  className="p-2 text-red-400 hover:bg-red-50 rounded-lg"
+                  title="Supprimer le logo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
+
+        <form
+          onSubmit={orgHandleSubmit((d) => orgMutation.mutate(d))}
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        >
+          <div>
+            <label className="label">Nom de l'entreprise *</label>
+            <input {...orgRegister('name', { required: true })} disabled={!isAdmin} className="input disabled:bg-gray-50" />
+          </div>
+          <div>
+            <label className="label">NINEA / NIF</label>
+            <input {...orgRegister('taxId')} disabled={!isAdmin} className="input disabled:bg-gray-50" placeholder="Numéro fiscal" />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="label">Adresse</label>
+            <input {...orgRegister('address')} disabled={!isAdmin} className="input disabled:bg-gray-50" placeholder="Rue, quartier, ville" />
+          </div>
+          <div>
+            <label className="label">Téléphone</label>
+            <input {...orgRegister('phone')} disabled={!isAdmin} className="input disabled:bg-gray-50" placeholder="+221 33 000 00 00" />
+          </div>
+          <div>
+            <label className="label">Email</label>
+            <input {...orgRegister('email')} type="email" disabled={!isAdmin} className="input disabled:bg-gray-50" placeholder="contact@entreprise.com" />
+          </div>
+          <div className="sm:col-span-2 flex items-center justify-between pt-1">
+            <p className="text-xs text-gray-400">
+              Devise : <strong>{orgDetails?.currency || organization?.currency}</strong> • Identifiant : <span className="font-mono">{organization?.slug}</span>
+              <br />Ces informations apparaissent sur vos factures PDF.
+            </p>
+            {isAdmin && (
+              <button type="submit" disabled={orgMutation.isPending} className="btn-primary flex items-center gap-2">
+                {orgMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Enregistrer
+              </button>
+            )}
+          </div>
+        </form>
       </div>
 
       <div className="card p-6">

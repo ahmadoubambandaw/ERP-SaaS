@@ -67,9 +67,13 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-              <Building2 className="w-5 h-5" />
-            </div>
+            {organization?.logo ? (
+              <img src={organization.logo} alt="" className="w-8 h-8 rounded-lg object-contain bg-white" />
+            ) : (
+              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5" />
+              </div>
+            )}
             <div>
               <p className="text-sm font-bold leading-none">{organization?.name || 'ERP SaaS'}</p>
               <p className="text-xs text-gray-400">{organization?.currency}</p>
