@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { ProjectsController } from './projects.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { subscriptionGuard } from '../../middleware/subscription.middleware';
 
 export const projectsRouter = Router();
 const ctrl = new ProjectsController();
 
-projectsRouter.use(authenticate, tenantMiddleware);
+projectsRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
 
 projectsRouter.get('/', ctrl.listProjects);
 projectsRouter.post('/', ctrl.createProject);

@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { AccountingController } from './accounting.controller';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { subscriptionGuard } from '../../middleware/subscription.middleware';
 
 export const accountingRouter = Router();
 const ctrl = new AccountingController();
 
-accountingRouter.use(authenticate, tenantMiddleware);
+accountingRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
 
 accountingRouter.get('/accounts', ctrl.listAccounts);
 accountingRouter.post('/accounts', authorize('ADMIN', 'ACCOUNTANT'), ctrl.createAccount);

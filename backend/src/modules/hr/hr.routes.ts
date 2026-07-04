@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { HrController } from './hr.controller';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { subscriptionGuard } from '../../middleware/subscription.middleware';
 
 export const hrRouter = Router();
 const ctrl = new HrController();
 
-hrRouter.use(authenticate, tenantMiddleware);
+hrRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
 
 hrRouter.get('/employees', ctrl.listEmployees);
 hrRouter.post('/employees', authorize('ADMIN', 'HR_MANAGER'), ctrl.createEmployee);

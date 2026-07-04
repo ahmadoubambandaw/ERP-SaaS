@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { InventoryController } from './inventory.controller';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { subscriptionGuard } from '../../middleware/subscription.middleware';
 
 export const inventoryRouter = Router();
 const ctrl = new InventoryController();
 
-inventoryRouter.use(authenticate, tenantMiddleware);
+inventoryRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
 
 inventoryRouter.get('/products', ctrl.listProducts);
 inventoryRouter.post('/products', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl.createProduct);

@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { InvoicingController } from './invoicing.controller';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { subscriptionGuard } from '../../middleware/subscription.middleware';
 
 export const invoicingRouter = Router();
 const ctrl = new InvoicingController();
 
-invoicingRouter.use(authenticate, tenantMiddleware);
+invoicingRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
 
 invoicingRouter.get('/customers', ctrl.listCustomers);
 invoicingRouter.post('/customers', ctrl.createCustomer);

@@ -2,11 +2,12 @@ import { Router } from 'express';
 import { CrmController } from './crm.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
+import { subscriptionGuard } from '../../middleware/subscription.middleware';
 
 export const crmRouter = Router();
 const ctrl = new CrmController();
 
-crmRouter.use(authenticate, tenantMiddleware);
+crmRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
 
 crmRouter.get('/leads', ctrl.listLeads);
 crmRouter.post('/leads', ctrl.createLead);
