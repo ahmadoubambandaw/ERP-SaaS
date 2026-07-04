@@ -13,6 +13,7 @@ const registerSchema = z.object({
   lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8),
+  plan: z.enum(['STARTER', 'PROFESSIONAL', 'ENTERPRISE']).default('STARTER'),
 });
 
 const loginSchema = z.object({
@@ -44,6 +45,7 @@ export class AuthService {
         slug: data.organizationSlug,
         country: data.country,
         currency: data.currency,
+        plan: data.plan,
         // 14 jours d'essai gratuit pour toute nouvelle organisation
         planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         users: {
