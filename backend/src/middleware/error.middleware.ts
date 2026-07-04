@@ -44,10 +44,16 @@ export function errorMiddleware(
     return;
   }
 
-  if (err.name === 'JsonWebTokenError') {
+  // TokenExpiredError/NotBeforeError are JWT errors with their own names;
+  // they MUST return 401 so the frontend interceptor refreshes the session
+  if (
+    err.name === 'JsonWebTokenError' ||
+    err.name === 'TokenExpiredError' ||
+    err.name === 'NotBeforeError'
+  ) {
     res.status(401).json({
       success: false,
-      error: 'Token invalide',
+      error: 'Session expirée, reconnexion en cours...',
     });
     return;
   }
