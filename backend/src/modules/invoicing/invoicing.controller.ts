@@ -42,6 +42,9 @@ export class InvoicingController {
   sendInvoice = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { sendSuccess(res, await service.sendInvoice(req.user!.organizationId, req.params.id)); } catch (e) { next(e); }
   };
+  emailInvoice = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try { sendSuccess(res, await service.emailInvoice(req.user!.organizationId, req.params.id, req.body), 'Email envoye'); } catch (e) { next(e); }
+  };
   addPayment = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { sendSuccess(res, await service.addPayment(req.user!.organizationId, req.params.id, req.body), 'Paiement enregistre', 201); } catch (e) { next(e); }
   };

@@ -85,6 +85,8 @@ export const invoicingService = {
   create: (data: unknown) => api.post('/invoicing', data),
   update: (id: string, data: unknown) => api.patch(`/invoicing/${id}`, data),
   send: (id: string) => api.patch(`/invoicing/${id}/send`),
+  emailInvoice: (id: string, data: { to: string; message?: string; pdfBase64: string }) =>
+    api.post(`/invoicing/${id}/email`, data),
   addPayment: (id: string, data: unknown) => api.post(`/invoicing/${id}/payments`, data),
   delete: (id: string) => api.delete(`/invoicing/${id}`),
   customers: () => api.get('/invoicing/customers'),

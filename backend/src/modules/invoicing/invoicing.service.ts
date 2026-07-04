@@ -167,6 +167,74 @@ export class InvoicingService {
     return prisma.invoice.update({ where: { id }, data: { status: 'SENT' } });
   }
 
+  async emailInvoice(orgId: string, id: string, body: unknown) {
+    const apiKey = process.env.BREVO_API_KEY;
+    const fromEmail = process.env.EMAIL_FROM;
+    if (!apiKey || !fromEmail) {
+      throw new AppError(
+        'Service email non configuré. Ajoutez BREVO_API_KEY et EMAIL_FROM dans les variables d\'environnement du serveur.',
+        503,
+      );
+    }
+
+    const data = z.object({
+      to: z.string().email(),
+      message: z.string().max(2000).optional(),
+      pdfBase64: z.string().min(100).max(4_000_000),
+    }).parse(clean(body));
+
+    const inv = await this.getInvoice(orgId, id);
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { name: true, email: true, phone: true },
+    });
+
+    const typeLabels: Record<string, string> = {
+      INVOICE: 'Facture', QUOTE: 'Devis', PROFORMA: 'Facture proforma', CREDIT_NOTE: 'Avoir',
+    };
+    const docLabel = typeLabels[inv.type] || 'Facture';
+    const subject = `${docLabel} ${inv.number} — ${org?.name || ''}`.trim();
+    const total = Number(inv.total).toLocaleString('fr-FR');
+
+    const htmlContent = `
+      <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;color:#1f2937">
+        <div style="background:#111827;border-radius:12px 12px 0 0;padding:24px;color:#fff">
+          <h2 style="margin:0;font-size:18px">${org?.name || ''}</h2>
+        </div>
+        <div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:24px">
+          <p>Bonjour,</p>
+          <p>${data.message ? data.message.replace(/\n/g, '<br/>') : `Veuillez trouver ci-joint votre ${docLabel.toLowerCase()} <strong>${inv.number}</strong> d'un montant de <strong>${total} ${inv.currency}</strong>.`}</p>
+          <p style="color:#6b7280;font-size:13px">Le document PDF est joint à cet email.</p>
+          <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0"/>
+          <p style="color:#9ca3af;font-size:12px">${org?.name || ''}${org?.phone ? ' • ' + org.phone : ''}${org?.email ? ' • ' + org.email : ''}</p>
+        </div>
+      </div>`;
+
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': apiKey, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        sender: { name: org?.name || 'ERP SaaS', email: fromEmail },
+        to: [{ email: data.to }],
+        replyTo: org?.email ? { email: org.email, name: org.name } : undefined,
+        subject,
+        htmlContent,
+        attachment: [{ name: `${inv.number}.pdf`, content: data.pdfBase64 }],
+      }),
+    });
+
+    if (!res.ok) {
+      const detail = await res.text().catch(() => '');
+      console.error('Brevo error:', res.status, detail);
+      throw new AppError('L\'envoi de l\'email a échoué. Vérifiez la configuration Brevo.', 502);
+    }
+
+    if (inv.status === 'DRAFT') {
+      await prisma.invoice.update({ where: { id }, data: { status: 'SENT' } });
+    }
+    return { sent: true, to: data.to };
+  }
+
   async addPayment(orgId: string, invoiceId: string, body: unknown) {
     const inv = await this.getInvoice(orgId, invoiceId);
     if (['CANCELLED', 'PAID'].includes(inv.status)) throw new AppError('Cette facture ne peut plus recevoir de paiement', 400);
