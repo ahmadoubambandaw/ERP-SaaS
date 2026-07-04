@@ -68,7 +68,7 @@ export default function ProductsPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div><label className="label">Code *</label><input {...register('code', { required: true })} className="input" /></div>
             <div className="col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
             <div><label className="label">Categorie</label><input {...register('category')} className="input" /></div>
@@ -85,7 +85,7 @@ export default function ProductsPage() {
             <div><label className="label">Prix de vente</label><input {...register('salePrice', { valueAsNumber: true })} type="number" step="1" className="input" /></div>
             <div><label className="label">Seuil reappro.</label><input {...register('reorderLevel', { valueAsNumber: true })} type="number" className="input" /></div>
             <div><label className="label">TVA (%)</label><input {...register('taxRate', { valueAsNumber: true })} type="number" step="0.5" className="input" /></div>
-            <div className="col-span-3 flex gap-3 justify-end">
+            <div className="col-span-full flex gap-3 justify-end">
               <button type="button" onClick={() => { setShowForm(false); setErrorMsg(''); reset(); }} className="btn-secondary">Annuler</button>
               <button type="submit" disabled={mutation.isPending} className="btn-primary flex items-center gap-2">
                 {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

@@ -37,7 +37,7 @@ export default function CustomersPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
             <div><label className="label">Email</label><input {...register('email')} type="email" className="input" /></div>
             <div><label className="label">Telephone</label><input {...register('phone')} className="input" /></div>
@@ -49,7 +49,7 @@ export default function CustomersPage() {
                 <option value="INDIVIDUAL">Particulier</option>
               </select>
             </div>
-            <div className="col-span-3 flex gap-3 justify-end">
+            <div className="col-span-full flex gap-3 justify-end">
               <button type="button" onClick={() => { setShowForm(false); setErrorMsg(''); reset(); }} className="btn-secondary">Annuler</button>
               <button type="submit" disabled={mutation.isPending} className="btn-primary flex items-center gap-2">
                 {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

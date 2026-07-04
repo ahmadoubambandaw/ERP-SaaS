@@ -33,7 +33,7 @@ export default function PayrollPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Bulletins de paie</h1>
           <p className="text-gray-500 text-sm">Gestion de la paie mensuelle</p>
@@ -55,7 +55,7 @@ export default function PayrollPage() {
       )}
 
       {payslips.length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="card p-4 text-center">
             <p className="text-sm text-gray-500">Bulletins</p>
             <p className="text-2xl font-bold">{payslips.length}</p>
