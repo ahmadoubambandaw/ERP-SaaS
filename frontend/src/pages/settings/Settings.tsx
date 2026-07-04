@@ -9,6 +9,7 @@ import { getApiError } from '../../utils/apiError';
 import { useAuthStore } from '../../store/auth.store';
 import { PLAN_LABELS, PLAN_PRICES, PAYMENT_NUMBER, PAYMENT_NAME, formatDateFr } from '../../utils/subscription';
 import { THEMES, applyTheme, getCurrentTheme } from '../../utils/theme';
+import { startCheckout } from '../../utils/checkout';
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: 'Super Admin',
@@ -585,17 +586,26 @@ export default function SettingsPage() {
               )}
             </div>
             {!sub.unlimited && (
-              <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-600">
-                <p className="font-medium text-gray-900 flex items-center gap-2 mb-2">
-                  <Smartphone className="w-4 h-4 text-primary-600" /> Pour renouveler
-                </p>
-                <p>
-                  Envoyez le montant par <strong>Wave</strong> ou <strong>Orange Money</strong> au{' '}
-                  <strong className="text-gray-900">{PAYMENT_NUMBER}</strong> ({PAYMENT_NAME}),
-                  puis la capture du paiement par WhatsApp au même numéro.
-                  Activation sous 24h.
-                </p>
-              </div>
+              <>
+                <button
+                  onClick={() => startCheckout()}
+                  className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2 mb-4"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  {sub.active ? 'Renouveler en ligne' : 'S\'abonner en ligne'} (Wave · OM · Carte)
+                </button>
+                <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-600">
+                  <p className="font-medium text-gray-900 flex items-center gap-2 mb-2">
+                    <Smartphone className="w-4 h-4 text-primary-600" /> Ou par paiement manuel
+                  </p>
+                  <p>
+                    Envoyez le montant par <strong>Wave</strong> ou <strong>Orange Money</strong> au{' '}
+                    <strong className="text-gray-900">{PAYMENT_NUMBER}</strong> ({PAYMENT_NAME}),
+                    puis la capture du paiement par WhatsApp au même numéro.
+                    Activation sous 24h.
+                  </p>
+                </div>
+              </>
             )}
           </>
         )}
