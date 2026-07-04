@@ -21,5 +21,6 @@ invoicingRouter.post('/', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.create
 invoicingRouter.get('/:id', ctrl.getInvoice);
 invoicingRouter.patch('/:id', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.updateInvoice);
 invoicingRouter.patch('/:id/send', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.sendInvoice);
+invoicingRouter.post('/:id/email', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.emailInvoice);
 invoicingRouter.post('/:id/payments', authorize('ADMIN', 'ACCOUNTANT'), ctrl.addPayment);
 invoicingRouter.delete('/:id', authorize('ADMIN', 'ACCOUNTANT'), ctrl.deleteInvoice);

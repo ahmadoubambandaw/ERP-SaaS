@@ -54,7 +54,7 @@ function fdate(d: string): string {
   return new Date(d).toLocaleDateString('fr-FR');
 }
 
-export function generateInvoicePdf(inv: PdfInvoice, fallbackOrgName?: string) {
+function buildInvoiceDoc(inv: PdfInvoice, fallbackOrgName?: string): jsPDF {
   const org = inv.organization || {};
   const orgName = org.name || fallbackOrgName || 'Mon Entreprise';
   const currency = org.currency || 'XOF';
@@ -246,5 +246,15 @@ export function generateInvoicePdf(inv: PdfInvoice, fallbackOrgName?: string) {
   doc.text(footerParts.join('  •  '), pageWidth / 2, pageHeight - 12, { align: 'center' });
   doc.text('Merci de votre confiance', pageWidth / 2, pageHeight - 7, { align: 'center' });
 
-  doc.save(`${inv.number}.pdf`);
+  return doc;
+}
+
+/** Download the invoice as a PDF file. */
+export function generateInvoicePdf(inv: PdfInvoice, fallbackOrgName?: string) {
+  buildInvoiceDoc(inv, fallbackOrgName).save(`${inv.number}.pdf`);
+}
+
+/** Base64 payload (no data: prefix) for email attachments. */
+export function getInvoicePdfBase64(inv: PdfInvoice, fallbackOrgName?: string): string {
+  return buildInvoiceDoc(inv, fallbackOrgName).output('datauristring').split(',')[1];
 }

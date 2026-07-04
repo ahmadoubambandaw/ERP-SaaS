@@ -1,11 +1,11 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2, Download } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2, Download, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 import { invoicingService } from '../../services/api';
-import { generateInvoicePdf } from '../../utils/invoicePdf';
+import { generateInvoicePdf, getInvoicePdfBase64 } from '../../utils/invoicePdf';
 import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
@@ -87,6 +87,9 @@ export default function InvoiceDetailPage() {
   const qc = useQueryClient();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailTo, setEmailTo] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['invoice', id],
@@ -124,6 +127,21 @@ export default function InvoiceDetailPage() {
     },
   });
   const watchedAmount = watch('amount');
+
+  const emailMutation = useMutation({
+    mutationFn: () => invoicingService.emailInvoice(id!, {
+      to: emailTo,
+      message: emailMessage || undefined,
+      pdfBase64: getInvoicePdfBase64(inv!, organization?.name),
+    }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['invoice', id] });
+      setShowEmailForm(false);
+      setEmailMessage('');
+      toast.success(`Email envoyé à ${emailTo}`);
+    },
+    onError: (err: unknown) => toast.error(getApiError(err)),
+  });
 
   const paymentMutation = useMutation({
     mutationFn: (formData: PaymentFormData) => invoicingService.addPayment(id!, formData),
@@ -182,6 +200,14 @@ export default function InvoiceDetailPage() {
           >
             <Download className="w-4 h-4" /> PDF
           </button>
+          {!isCancelled && (
+            <button
+              onClick={() => { setEmailTo(inv.customer.email || ''); setShowEmailForm(true); }}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Mail className="w-4 h-4" /> Envoyer par email
+            </button>
+          )}
           {isDraft && (
             <>
               <button
@@ -388,6 +414,56 @@ export default function InvoiceDetailPage() {
         <div className="card p-6">
           <h3 className="font-semibold text-gray-900 mb-2">Notes</h3>
           <p className="text-gray-600 text-sm whitespace-pre-line">{inv.notes}</p>
+        </div>
+      )}
+
+      {/* Email dialog */}
+      {showEmailForm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowEmailForm(false)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-5 h-5 text-primary-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Envoyer {inv.number} par email</h3>
+                <p className="text-sm text-gray-500 mt-0.5">Le PDF sera joint automatiquement.</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="label">Destinataire *</label>
+                <input
+                  type="email"
+                  value={emailTo}
+                  onChange={(e) => setEmailTo(e.target.value)}
+                  className="input"
+                  placeholder="client@email.com"
+                />
+              </div>
+              <div>
+                <label className="label">Message (optionnel)</label>
+                <textarea
+                  value={emailMessage}
+                  onChange={(e) => setEmailMessage(e.target.value)}
+                  className="input h-24 resize-none"
+                  placeholder="Un message personnalisé pour votre client..."
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={() => setShowEmailForm(false)} className="btn-secondary">Annuler</button>
+              <button
+                onClick={() => emailMutation.mutate()}
+                disabled={!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(emailTo) || emailMutation.isPending}
+                className="btn-primary flex items-center gap-2"
+              >
+                {emailMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {emailMutation.isPending ? 'Envoi...' : 'Envoyer'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
