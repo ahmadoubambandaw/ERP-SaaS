@@ -5,8 +5,10 @@ import { registerSW } from 'virtual:pwa-register';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import './index.css';
+import { initTheme } from './utils/theme';
 
 registerSW({ immediate: true });
+initTheme();
 
 const queryClient = new QueryClient({
   defaultOptions: {
