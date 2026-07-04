@@ -2,6 +2,7 @@ import { prisma } from '../../utils/prisma';
 import { hashPassword } from '../../utils/password';
 import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
+import { planUserLimit } from '../../config/plans';
 
 const createSchema = z.object({
   firstName: z.string().min(1),
@@ -26,6 +27,23 @@ export class UsersService {
       where: { organizationId_email: { organizationId, email: data.email } },
     });
     if (existing) throw new AppError('Cet email est deja utilise dans cette organisation', 409);
+
+    // Limite d'utilisateurs selon la formule d'abonnement
+    const org = await prisma.organization.findUnique({
+      where: { id: organizationId },
+      select: { plan: true },
+    });
+    const limit = planUserLimit(org?.plan || 'STARTER');
+    if (limit > 0) {
+      const count = await prisma.user.count({ where: { organizationId } });
+      if (count >= limit) {
+        throw new AppError(
+          `Votre formule (${org?.plan || 'STARTER'}) est limitée à ${limit} utilisateurs. Passez à un plan supérieur pour en ajouter davantage.`,
+          403,
+          'PLAN_USER_LIMIT',
+        );
+      }
+    }
 
     const hashed = await hashPassword(data.password);
     return prisma.user.create({

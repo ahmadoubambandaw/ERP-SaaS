@@ -3,6 +3,7 @@ import { InvoicingController } from './invoicing.controller';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
 import { subscriptionGuard } from '../../middleware/subscription.middleware';
+import { requireModule } from '../../middleware/plan.middleware';
 
 export const invoicingRouter = Router();
 const ctrl = new InvoicingController();
@@ -14,8 +15,9 @@ invoicingRouter.post('/customers', ctrl.createCustomer);
 invoicingRouter.get('/customers/:id', ctrl.getCustomer);
 invoicingRouter.patch('/customers/:id', ctrl.updateCustomer);
 
-invoicingRouter.get('/suppliers', ctrl.listSuppliers);
-invoicingRouter.post('/suppliers', ctrl.createSupplier);
+// Fournisseurs = module Achats (Professional+)
+invoicingRouter.get('/suppliers', requireModule('purchasing'), ctrl.listSuppliers);
+invoicingRouter.post('/suppliers', requireModule('purchasing'), ctrl.createSupplier);
 
 invoicingRouter.get('/', ctrl.listInvoices);
 invoicingRouter.post('/', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.createInvoice);

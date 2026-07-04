@@ -3,11 +3,12 @@ import { HrController } from './hr.controller';
 import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
 import { subscriptionGuard } from '../../middleware/subscription.middleware';
+import { requireModule } from '../../middleware/plan.middleware';
 
 export const hrRouter = Router();
 const ctrl = new HrController();
 
-hrRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
+hrRouter.use(authenticate, tenantMiddleware, subscriptionGuard, requireModule('hr'));
 
 hrRouter.get('/employees', ctrl.listEmployees);
 hrRouter.post('/employees', authorize('ADMIN', 'HR_MANAGER'), ctrl.createEmployee);

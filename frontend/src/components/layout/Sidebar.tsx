@@ -1,24 +1,36 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Package, Users, BarChart2, ShoppingCart,
-  FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp, X, Shield,
+  FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp, X, Shield, Lock,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/auth.store';
+import { subscriptionService } from '../../services/api';
+import { planHasModule, PlanModule } from '../../utils/plans';
 import { clsx } from 'clsx';
 
-const navItems = [
+interface NavItem {
+  label: string;
+  icon: typeof LayoutDashboard;
+  to: string;
+  module?: PlanModule;
+  children?: { label: string; to: string }[];
+}
+
+const navItems: NavItem[] = [
   { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
-  { label: 'Comptabilite', icon: BarChart2, to: '/accounting' },
+  { label: 'Comptabilite', icon: BarChart2, to: '/accounting', module: 'accounting' },
   {
-    label: 'Facturation', icon: FileText, to: '/invoicing',
+    label: 'Facturation', icon: FileText, to: '/invoicing', module: 'invoicing',
     children: [
       { label: 'Factures & Devis', to: '/invoicing' },
       { label: 'Clients', to: '/invoicing/customers' },
     ],
   },
   {
-    label: 'Stocks', icon: Package, to: '/inventory',
+    label: 'Stocks', icon: Package, to: '/inventory', module: 'inventory',
     children: [
       { label: 'Produits', to: '/inventory' },
       { label: 'Mouvements', to: '/inventory/movements' },
@@ -26,14 +38,14 @@ const navItems = [
     ],
   },
   {
-    label: 'Achats', icon: ShoppingCart, to: '/purchasing',
+    label: 'Achats', icon: ShoppingCart, to: '/purchasing', module: 'purchasing',
     children: [
       { label: 'Bons de commande', to: '/purchasing' },
       { label: 'Fournisseurs', to: '/purchasing/suppliers' },
     ],
   },
   {
-    label: 'RH & Paie', icon: Users, to: '/hr',
+    label: 'RH & Paie', icon: Users, to: '/hr', module: 'hr',
     children: [
       { label: 'Employés', to: '/hr' },
       { label: 'Bulletins de paie', to: '/hr/payroll' },
@@ -41,13 +53,13 @@ const navItems = [
     ],
   },
   {
-    label: 'CRM', icon: TrendingUp, to: '/crm',
+    label: 'CRM', icon: TrendingUp, to: '/crm', module: 'crm',
     children: [
       { label: 'Prospects', to: '/crm' },
       { label: 'Opportunites', to: '/crm/opportunities' },
     ],
   },
-  { label: 'Projets', icon: FolderKanban, to: '/projects' },
+  { label: 'Projets', icon: FolderKanban, to: '/projects', module: 'projects' },
   { label: 'Parametres', icon: Settings, to: '/settings' },
 ];
 
@@ -60,11 +72,29 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
   const { organization, user } = useAuthStore();
 
-  const items = user?.role === 'SUPER_ADMIN'
+  const { data: subData } = useQuery({
+    queryKey: ['subscription'],
+    queryFn: () => subscriptionService.me(),
+  });
+  const plan = subData?.data?.data?.plan as string | undefined;
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+
+  const items: NavItem[] = isSuperAdmin
     ? [...navItems, { label: 'Plateforme', icon: Shield, to: '/admin' }]
     : navItems;
+
+  // Un module est verrouillé s'il n'est pas inclus dans la formule (sauf super admin)
+  const isLocked = (item: NavItem): boolean =>
+    !isSuperAdmin && !!item.module && !planHasModule(plan, item.module);
+
+  const handleLocked = (label: string) => {
+    toast(`« ${label} » est disponible avec le plan Professional`, { icon: '🔒' });
+    navigate('/settings');
+    onClose?.();
+  };
 
   const nav = (
     <>
@@ -84,7 +114,6 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             </div>
           </div>
         )}
-        {/* Collapse toggle on desktop, close button on mobile */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="hidden lg:block p-1 rounded hover:bg-gray-700 text-gray-400"
@@ -105,6 +134,26 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
           const isActive = location.pathname.startsWith(item.to);
           const hasChildren = item.children && item.children.length > 0;
           const isExpanded = expanded === item.to;
+          const locked = isLocked(item);
+
+          if (locked) {
+            return (
+              <button
+                key={item.to}
+                onClick={() => handleLocked(item.label)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-800 transition-colors"
+                title="Réservé au plan Professional"
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && (
+                  <>
+                    <span className="flex-1 text-left">{item.label}</span>
+                    <Lock className="w-3.5 h-3.5 text-gray-500" />
+                  </>
+                )}
+              </button>
+            );
+          }
 
           return (
             <div key={item.to}>
@@ -174,7 +223,6 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Mobile backdrop */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
@@ -182,14 +230,11 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
         />
       )}
 
-      {/* Drawer on mobile, static sidebar on desktop */}
       <aside
         className={clsx(
           'bg-gray-900 text-white flex flex-col transition-all duration-300',
-          // Mobile: fixed drawer that slides in
           'fixed inset-y-0 left-0 z-50 w-72 transform',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
-          // Desktop: back in the normal flow
           'lg:static lg:translate-x-0 lg:min-h-screen',
           collapsed ? 'lg:w-16' : 'lg:w-64',
         )}

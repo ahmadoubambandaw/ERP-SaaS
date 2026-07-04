@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/auth.store';
 
 const BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -28,6 +29,13 @@ api.interceptors.response.use(
     const original = error.config as typeof error.config & { _retry?: boolean };
     if (error.response?.status === 402 && window.location.pathname !== '/subscription-expired') {
       window.location.href = '/subscription-expired';
+      return Promise.reject(error);
+    }
+    // Module non inclus dans la formule ou limite d'utilisateurs atteinte
+    const code = (error.response?.data as { code?: string } | undefined)?.code;
+    if (error.response?.status === 403 && (code === 'PLAN_UPGRADE_REQUIRED' || code === 'PLAN_USER_LIMIT')) {
+      const msg = (error.response?.data as { error?: string } | undefined)?.error;
+      toast(msg || 'Fonctionnalité réservée à un plan supérieur', { icon: '🔒' });
       return Promise.reject(error);
     }
     if (error.response?.status === 401 && !original._retry) {
