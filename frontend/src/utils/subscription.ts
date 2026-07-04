@@ -5,7 +5,7 @@ export const PLAN_LABELS: Record<string, string> = {
 };
 
 export const PLAN_PRICES: Record<string, string> = {
-  STARTER: '10 000 F CFA / mois',
+  STARTER: '15 000 F CFA / mois',
   PROFESSIONAL: '25 000 F CFA / mois',
   ENTERPRISE: 'Sur devis',
 };

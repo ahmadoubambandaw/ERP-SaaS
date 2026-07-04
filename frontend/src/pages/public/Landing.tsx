@@ -41,7 +41,7 @@ const FEATURES = [
 const PLANS = [
   {
     name: 'Starter',
-    price: '10 000',
+    price: '15 000',
     period: 'F CFA / mois',
     desc: 'Pour démarrer sereinement',
     features: ['3 utilisateurs', 'Facturation illimitée', 'Comptabilité SYSCOHADA', 'Gestion des stocks', 'Application mobile (PWA)'],
