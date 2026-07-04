@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone, Palette, Check } from 'lucide-react';
+import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone, Palette, Check, Gift } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -151,9 +151,25 @@ export default function SettingsPage() {
     queryFn: () => subscriptionService.me(),
   });
   const sub = subData?.data?.data as
-    | { plan: string; planExpiresAt: string | null; unlimited: boolean; active: boolean; daysLeft: number | null }
+    | {
+        plan: string; planExpiresAt: string | null; unlimited: boolean; active: boolean; daysLeft: number | null;
+        referralCode?: string; referralsTotal?: number; monthsEarned?: number; rewardMonths?: number;
+      }
     | undefined;
   const orgDetails: OrgDetails | undefined = orgData?.data?.data;
+
+  const referralLink = sub?.referralCode
+    ? `${window.location.origin}/register?ref=${sub.referralCode}`
+    : '';
+  const shareReferral = () => {
+    const msg = `Je gère mon activité avec Naatal (facturation, stock, compta...) et je te le recommande 👌\n`
+      + `Inscris-toi avec mon code ${sub?.referralCode} et gagne 7 jours d'essai bonus :\n${referralLink}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+  const copyReferral = () => {
+    navigator.clipboard?.writeText(referralLink);
+    toast.success('Lien de parrainage copié');
+  };
 
   useEffect(() => {
     if (orgDetails) {
@@ -584,6 +600,42 @@ export default function SettingsPage() {
           </>
         )}
       </div>
+
+      {/* ===== Parrainage ===== */}
+      {sub?.referralCode && (
+        <div className="card p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <Gift className="w-5 h-5 text-primary-600" />
+            <h2 className="font-semibold text-gray-900">Parrainage</h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-5">
+            Invitez d'autres entrepreneurs. Dès qu'un filleul s'abonne, vous gagnez{' '}
+            <strong>{sub.rewardMonths || 1} mois offert</strong> — et lui reçoit 7 jours d'essai bonus.
+          </p>
+
+          <div className="grid grid-cols-2 gap-4 mb-5">
+            <div className="p-4 bg-gray-50 rounded-xl text-center">
+              <p className="text-2xl font-bold text-gray-900">{sub.referralsTotal ?? 0}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Filleul(s) inscrit(s)</p>
+            </div>
+            <div className="p-4 bg-primary-50 rounded-xl text-center">
+              <p className="text-2xl font-bold text-primary-600">{sub.monthsEarned ?? 0}</p>
+              <p className="text-xs text-gray-500 mt-0.5">Mois gagné(s)</p>
+            </div>
+          </div>
+
+          <label className="label">Votre code de parrainage</label>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="font-mono font-bold text-lg text-gray-900 bg-gray-100 px-4 py-2 rounded-lg tracking-wider">
+              {sub.referralCode}
+            </span>
+            <button onClick={shareReferral} className="btn-primary flex items-center gap-2">
+              <Smartphone className="w-4 h-4" /> Partager sur WhatsApp
+            </button>
+            <button onClick={copyReferral} className="btn-secondary">Copier le lien</button>
+          </div>
+        </div>
+      )}
 
       <div className="card p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Informations système</h2>

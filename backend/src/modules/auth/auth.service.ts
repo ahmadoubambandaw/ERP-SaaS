@@ -14,6 +14,7 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   plan: z.enum(['STARTER', 'PROFESSIONAL', 'ENTERPRISE']).default('STARTER'),
+  referralCode: z.string().trim().min(3).max(20).optional(),
 });
 
 const loginSchema = z.object({
@@ -23,6 +24,16 @@ const loginSchema = z.object({
 });
 
 export class AuthService {
+  private async generateReferralCode(): Promise<string> {
+    const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    for (let i = 0; i < 8; i++) {
+      const code = 'NA-' + Array.from({ length: 5 }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join('');
+      const clash = await prisma.organization.findUnique({ where: { referralCode: code } });
+      if (!clash) return code;
+    }
+    return 'NA-' + Date.now().toString(36).toUpperCase();
+  }
+
   async register(body: unknown) {
     const data = registerSchema.parse(body);
 
@@ -39,6 +50,22 @@ export class AuthService {
 
     const hashedPassword = await hashPassword(data.password);
 
+    // Parrainage : code du parrain -> +7 jours d'essai bonus pour le filleul
+    let referredById: string | undefined;
+    let trialDays = 14;
+    if (data.referralCode) {
+      const referrer = await prisma.organization.findUnique({
+        where: { referralCode: data.referralCode.toUpperCase() },
+        select: { id: true },
+      });
+      if (referrer) {
+        referredById = referrer.id;
+        trialDays = 21;
+      }
+    }
+
+    const referralCode = await this.generateReferralCode();
+
     const org = await prisma.organization.create({
       data: {
         name: data.organizationName,
@@ -46,8 +73,10 @@ export class AuthService {
         country: data.country,
         currency: data.currency,
         plan: data.plan,
-        // 14 jours d'essai gratuit pour toute nouvelle organisation
-        planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+        referralCode,
+        referredById,
+        // Essai gratuit (14 jours, ou 21 avec un code de parrainage)
+        planExpiresAt: new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000),
         users: {
           create: {
             firstName: data.firstName,

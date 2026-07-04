@@ -19,6 +19,9 @@ model Organization {
   language    String   @default("fr")
   plan          Plan      @default(STARTER)
   planExpiresAt DateTime?
+  referralCode     String?  @unique
+  referredById     String?
+  referralRewarded Boolean  @default(false)
   isActive    Boolean  @default(true)
   logo        String?
   address     String?
