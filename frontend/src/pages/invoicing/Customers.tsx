@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Users, Loader2 } from 'lucide-react';
+import { Plus, Users, Loader2, Download } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { invoicingService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
+import { exportToCsv } from '../../utils/exportCsv';
 
 export default function CustomersPage() {
   const [showForm, setShowForm] = useState(false);
@@ -25,9 +26,20 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Clients</h1>
-        <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouveau client
-        </button>
+        <div className="flex items-center gap-2">
+          {customers.length > 0 && (
+            <button
+              onClick={() => exportToCsv('clients', ['Nom', 'Email', 'Téléphone', 'Ville', 'Type', 'NINEA/NIF'],
+                customers.map((c: Record<string, unknown>) => [c.name as string, c.email as string, c.phone as string, c.city as string, c.type as string, c.taxId as string]))}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" /> Exporter
+            </button>
+          )}
+          <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Nouveau client
+          </button>
+        </div>
       </div>
 
       {showForm && (

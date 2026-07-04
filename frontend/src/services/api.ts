@@ -67,6 +67,8 @@ export const authService = {
   register: (data: Record<string, unknown>) => api.post('/auth/register', data),
   logout: (refreshToken: string) => api.post('/auth/logout', { refreshToken }),
   me: () => api.get('/auth/me'),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    api.patch('/auth/me/password', data),
 };
 
 export const dashboardService = {

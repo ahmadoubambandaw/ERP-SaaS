@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2 } from 'lucide-react';
+import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { usersService, organizationService } from '../../services/api';
+import { usersService, organizationService, authService } from '../../services/api';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { getApiError } from '../../utils/apiError';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -86,9 +87,45 @@ export default function SettingsPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: unknown }) => usersService.update(id, data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); toast.success('Utilisateur mis à jour'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); setToToggle(null); toast.success('Utilisateur mis à jour'); },
     onError: (err: unknown) => setErrorMsg(getApiError(err)),
   });
+
+  // ===== Mot de passe (mon compte) =====
+  const [showPwForm, setShowPwForm] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const {
+    register: pwRegister,
+    handleSubmit: pwHandleSubmit,
+    reset: pwReset,
+  } = useForm<{ currentPassword: string; newPassword: string }>();
+
+  const pwMutation = useMutation({
+    mutationFn: (d: { currentPassword: string; newPassword: string }) => authService.changePassword(d),
+    onSuccess: () => {
+      setShowPwForm(false);
+      setPwError('');
+      pwReset();
+      toast.success('Mot de passe modifié');
+    },
+    onError: (err: unknown) => setPwError(getApiError(err)),
+  });
+
+  // ===== Réinitialisation mot de passe (admin) =====
+  const [resetPwFor, setResetPwFor] = useState<OrgUser | null>(null);
+  const [newPw, setNewPw] = useState('');
+  const resetPwMutation = useMutation({
+    mutationFn: ({ id, password }: { id: string; password: string }) => usersService.update(id, { password }),
+    onSuccess: () => {
+      setResetPwFor(null);
+      setNewPw('');
+      toast.success('Mot de passe réinitialisé');
+    },
+    onError: (err: unknown) => setErrorMsg(getApiError(err)),
+  });
+
+  // ===== Désactivation (confirmation) =====
+  const [toToggle, setToToggle] = useState<OrgUser | null>(null);
 
   // ===== Organisation =====
   const [orgError, setOrgError] = useState('');
@@ -271,6 +308,37 @@ export default function SettingsPage() {
             <span className="badge badge-blue mt-1">{ROLE_LABELS[user?.role || ''] || user?.role}</span>
           </div>
         </div>
+
+        <div className="mt-6 pt-4 border-t border-gray-100">
+          {!showPwForm ? (
+            <button onClick={() => { setShowPwForm(true); setPwError(''); }} className="btn-secondary text-sm flex items-center gap-2">
+              <Lock className="w-4 h-4" /> Changer mon mot de passe
+            </button>
+          ) : (
+            <form onSubmit={pwHandleSubmit((d) => pwMutation.mutate(d))} className="space-y-3 max-w-sm">
+              {pwError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{pwError}</div>
+              )}
+              <div>
+                <label className="label">Mot de passe actuel *</label>
+                <input {...pwRegister('currentPassword', { required: true })} type="password" className="input" />
+              </div>
+              <div>
+                <label className="label">Nouveau mot de passe * (min. 8 caractères)</label>
+                <input {...pwRegister('newPassword', { required: true, minLength: 8 })} type="password" className="input" />
+              </div>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => { setShowPwForm(false); pwReset(); setPwError(''); }} className="btn-secondary text-sm">
+                  Annuler
+                </button>
+                <button type="submit" disabled={pwMutation.isPending} className="btn-primary text-sm flex items-center gap-2">
+                  {pwMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Modifier
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
 
       {isAdmin && (
@@ -364,7 +432,14 @@ export default function SettingsPage() {
                       {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
                     </select>
                     <button
-                      onClick={() => updateMutation.mutate({ id: u.id, data: { isActive: !u.isActive } })}
+                      onClick={() => setResetPwFor(u)}
+                      title="Réinitialiser le mot de passe"
+                      className="p-1.5 rounded transition-colors text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => (u.isActive ? setToToggle(u) : updateMutation.mutate({ id: u.id, data: { isActive: true } }))}
                       title={u.isActive ? 'Désactiver' : 'Réactiver'}
                       className={`p-1.5 rounded transition-colors ${u.isActive ? 'text-red-400 hover:bg-red-50' : 'text-green-500 hover:bg-green-50'}`}
                     >
@@ -376,6 +451,55 @@ export default function SettingsPage() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Dialog: désactivation */}
+      <ConfirmDialog
+        open={!!toToggle}
+        title="Désactiver ce compte ?"
+        message={toToggle ? `${toToggle.firstName} ${toToggle.lastName} ne pourra plus se connecter. Vous pourrez le réactiver à tout moment.` : ''}
+        confirmLabel="Désactiver"
+        danger
+        loading={updateMutation.isPending}
+        onConfirm={() => toToggle && updateMutation.mutate({ id: toToggle.id, data: { isActive: false } })}
+        onCancel={() => setToToggle(null)}
+      />
+
+      {/* Dialog: réinitialisation mot de passe */}
+      {resetPwFor && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setResetPwFor(null)} />
+          <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center flex-shrink-0">
+                <KeyRound className="w-5 h-5 text-primary-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Réinitialiser le mot de passe</h3>
+                <p className="text-sm text-gray-500 mt-1">{resetPwFor.firstName} {resetPwFor.lastName}</p>
+              </div>
+            </div>
+            <label className="label">Nouveau mot de passe (min. 8 caractères)</label>
+            <input
+              type="password"
+              value={newPw}
+              onChange={(e) => setNewPw(e.target.value)}
+              className="input"
+              autoFocus
+            />
+            <div className="flex justify-end gap-3 mt-5">
+              <button onClick={() => { setResetPwFor(null); setNewPw(''); }} className="btn-secondary">Annuler</button>
+              <button
+                onClick={() => resetPwMutation.mutate({ id: resetPwFor.id, password: newPw })}
+                disabled={newPw.length < 8 || resetPwMutation.isPending}
+                className="btn-primary flex items-center gap-2"
+              >
+                {resetPwMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                Réinitialiser
+              </button>
+            </div>
           </div>
         </div>
       )}

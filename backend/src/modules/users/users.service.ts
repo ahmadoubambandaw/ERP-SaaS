@@ -50,11 +50,13 @@ export class UsersService {
       lastName: z.string().min(1).optional(),
       role: z.enum(['ADMIN', 'ACCOUNTANT', 'SALES', 'INVENTORY_MANAGER', 'HR_MANAGER', 'PROJECT_MANAGER', 'EMPLOYEE']).optional(),
       isActive: z.boolean().optional(),
+      password: z.string().min(8).optional(),
     }).parse(body);
 
+    const { password, ...rest } = data;
     return prisma.user.update({
       where: { id },
-      data,
+      data: { ...rest, ...(password ? { password: await hashPassword(password) } : {}) },
       select: { id: true, firstName: true, lastName: true, email: true, role: true, isActive: true },
     });
   }

@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Users, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Users, Loader2, AlertCircle, Download } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { hrService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
+import { exportToCsv } from '../../utils/exportCsv';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -86,12 +87,23 @@ export default function EmployeesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Ressources Humaines</h1>
           <p className="text-gray-500 text-sm">{employees.length} employé(s)</p>
         </div>
-        <button
-          onClick={() => { setShowForm(true); setErrorMsg(''); }}
-          className="btn-primary flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> Nouvel employé
-        </button>
+        <div className="flex items-center gap-2">
+          {employees.length > 0 && (
+            <button
+              onClick={() => exportToCsv('employes', ['Matricule', 'Prénom', 'Nom', 'Email', 'Téléphone', 'Poste', 'Département', 'Contrat', 'Salaire de base', 'Date embauche'],
+                employees.map((e) => [e.employeeNumber, e.firstName, e.lastName, e.email, e.phone, e.position, e.department, CONTRACT_LABELS[e.employmentType] || e.employmentType, Number(e.baseSalary), e.startDate?.slice(0, 10)]))}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" /> Exporter
+            </button>
+          )}
+          <button
+            onClick={() => { setShowForm(true); setErrorMsg(''); }}
+            className="btn-primary flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Nouvel employé
+          </button>
+        </div>
       </div>
 
       {showForm && (

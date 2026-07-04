@@ -7,6 +7,7 @@ import { hrService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { formatDate } from '../../utils/format';
 import StatusBadge from '../../components/ui/StatusBadge';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 const LEAVE_TYPES = [
   { value: 'ANNUAL', label: 'Congé annuel' },
@@ -46,6 +47,7 @@ interface Leave {
 export default function LeavesPage() {
   const [showForm, setShowForm] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [action, setAction] = useState<{ leave: Leave; type: 'approve' | 'reject' } | null>(null);
   const qc = useQueryClient();
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<LeaveFormData>({
@@ -80,13 +82,13 @@ export default function LeavesPage() {
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => hrService.approveLeave(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['leaves'] }); toast.success('Congé approuvé'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['leaves'] }); setAction(null); toast.success('Congé approuvé'); },
     onError: (err: unknown) => toast.error(getApiError(err)),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (id: string) => hrService.rejectLeave(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['leaves'] }); toast.success('Congé refusé'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['leaves'] }); setAction(null); toast.success('Congé refusé'); },
     onError: (err: unknown) => toast.error(getApiError(err)),
   });
 
@@ -258,14 +260,14 @@ export default function LeavesPage() {
                     {l.status === 'PENDING' && (
                       <div className="flex gap-1">
                         <button
-                          onClick={() => approveMutation.mutate(l.id)}
+                          onClick={() => setAction({ leave: l, type: 'approve' })}
                           title="Approuver"
                           className="p-1.5 hover:bg-green-50 text-green-600 rounded transition-colors"
                         >
                           <Check className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => rejectMutation.mutate(l.id)}
+                          onClick={() => setAction({ leave: l, type: 'reject' })}
                           title="Refuser"
                           className="p-1.5 hover:bg-red-50 text-red-500 rounded transition-colors"
                         >
@@ -280,6 +282,21 @@ export default function LeavesPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={!!action}
+        title={action?.type === 'approve' ? 'Approuver cette demande ?' : 'Refuser cette demande ?'}
+        message={action ? `${action.leave.employee?.firstName} ${action.leave.employee?.lastName} — du ${formatDate(action.leave.startDate)} au ${formatDate(action.leave.endDate)}` : ''}
+        confirmLabel={action?.type === 'approve' ? 'Approuver' : 'Refuser'}
+        danger={action?.type === 'reject'}
+        loading={approveMutation.isPending || rejectMutation.isPending}
+        onConfirm={() => {
+          if (!action) return;
+          if (action.type === 'approve') approveMutation.mutate(action.leave.id);
+          else rejectMutation.mutate(action.leave.id);
+        }}
+        onCancel={() => setAction(null)}
+      />
     </div>
   );
 }

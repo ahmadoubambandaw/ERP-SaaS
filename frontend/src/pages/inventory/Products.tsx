@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, AlertTriangle, Loader2 } from 'lucide-react';
+import { Plus, Package, AlertTriangle, Loader2, Download } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { inventoryService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
+import { exportToCsv } from '../../utils/exportCsv';
 import { formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -48,9 +49,20 @@ export default function ProductsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Catalogue produits</h1>
           <p className="text-gray-500 text-sm">{products.length} produit(s)</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouveau produit
-        </button>
+        <div className="flex items-center gap-2">
+          {products.length > 0 && (
+            <button
+              onClick={() => exportToCsv('produits', ['Code', 'Nom', 'Catégorie', 'Unité', 'Prix achat', 'Prix vente', 'TVA (%)', 'Stock'],
+                products.map((pr: Record<string, unknown>) => [pr.code as string, pr.name as string, pr.category as string, pr.unitOfMeasure as string, pr.costPrice ? Number(pr.costPrice) : '', pr.salePrice ? Number(pr.salePrice) : '', Number(pr.taxRate || 0), getStock(pr)]))}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" /> Exporter
+            </button>
+          )}
+          <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Nouveau produit
+          </button>
+        </div>
       </div>
 
       {lowStock.length > 0 && (

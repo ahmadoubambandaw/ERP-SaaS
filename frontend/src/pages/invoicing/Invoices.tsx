@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, FileText, Send, Trash2, Eye } from 'lucide-react';
+import { Plus, FileText, Send, Trash2, Eye, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { invoicingService } from '../../services/api';
 import { formatCurrency, formatDate } from '../../utils/format';
 import StatusBadge from '../../components/ui/StatusBadge';
+import { exportToCsv } from '../../utils/exportCsv';
 import { useAuthStore } from '../../store/auth.store';
 
 export default function InvoicesPage() {
@@ -30,9 +31,20 @@ export default function InvoicesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Facturation</h1>
           <p className="text-gray-500 text-sm mt-1">Factures, devis et avoirs</p>
         </div>
-        <Link to="/invoicing/new" className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouvelle facture
-        </Link>
+        <div className="flex items-center gap-2">
+          {invoices.length > 0 && (
+            <button
+              onClick={() => exportToCsv('factures', ['Numéro', 'Client', 'Type', 'Date', 'Échéance', 'Montant', 'Payé', 'Statut'],
+                invoices.map((i: Record<string, unknown>) => [i.number as string, (i.customer as Record<string, unknown>)?.name as string, i.type as string, (i.issueDate as string)?.slice(0, 10), (i.dueDate as string)?.slice(0, 10), Number(i.total), Number(i.paidAmount || 0), i.status as string]))}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" /> Exporter
+            </button>
+          )}
+          <Link to="/invoicing/new" className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Nouvelle facture
+          </Link>
+        </div>
       </div>
 
       <div className="card">
