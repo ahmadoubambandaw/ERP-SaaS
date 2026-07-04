@@ -4,6 +4,7 @@ import { Building2, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { authService } from '../../services/api';
 import { useAuthStore } from '../../store/auth.store';
+import Logo from '../../components/ui/Logo';
 
 interface LoginForm {
   organizationSlug: string;
@@ -38,9 +39,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-primary-900 to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-white" />
-          </div>
+          <Logo className="w-16 h-16 mx-auto mb-4" />
           <h1 className="text-3xl font-bold text-white">Naatal</h1>
           <p className="text-gray-300 mt-2 font-medium">Naatal sa liggéey</p>
           <p className="text-gray-400 text-sm">Faites prospérer votre activité</p>

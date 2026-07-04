@@ -1,10 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#2563eb"/>
-  <g fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M156 236v-60h200v60"/>
-    <rect x="126" y="236" width="260" height="150" rx="20"/>
-    <path d="M216 176v-30a20 20 0 0 1 20-20h40a20 20 0 0 1 20 20v30"/>
-    <path d="M126 300h260"/>
-    <path d="M236 300v28h40v-28"/>
-  </g>
+  <defs>
+    <linearGradient id="ng" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3b82f6"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#ng)"/>
+  <!-- N en croissance -->
+  <path d="M150 372 L150 158 L362 372 L362 158"
+        fill="none" stroke="#ffffff" stroke-width="46"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Flèche de prospérité (dorée) -->
+  <path d="M300 150 L392 150 L392 242"
+        fill="none" stroke="#fbbf24" stroke-width="30"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M392 150 L322 220" fill="none" stroke="#fbbf24"
+        stroke-width="30" stroke-linecap="round"/>
 </svg>
