@@ -55,10 +55,14 @@ export function errorMiddleware(
   if (
     err.name === 'PrismaClientKnownRequestError' ||
     err.name === 'PrismaClientUnknownRequestError' ||
-    err.name === 'PrismaClientValidationError'
+    err.name === 'PrismaClientValidationError' ||
+    err.name === 'PrismaClientInitializationError'
   ) {
     const errorCode = err.code || '';
-    const message = PRISMA_ERROR_MESSAGES[errorCode] || 'Erreur de base de données';
+    const detail = (err.message || '').replace(/\n+/g, ' ').trim().slice(-400);
+    const message = PRISMA_ERROR_MESSAGES[errorCode]
+      ? `${PRISMA_ERROR_MESSAGES[errorCode]} — ${detail}`
+      : `Erreur de base de données : ${detail}`;
     console.error('Prisma error:', err);
     res.status(400).json({
       success: false,
@@ -69,8 +73,9 @@ export function errorMiddleware(
   }
 
   console.error('Internal error:', err);
+  const detail = (err.message || '').replace(/\n+/g, ' ').trim().slice(-400);
   res.status(500).json({
     success: false,
-    error: 'Erreur interne du serveur',
+    error: detail ? `Erreur serveur : ${detail}` : 'Erreur interne du serveur',
   });
 }
