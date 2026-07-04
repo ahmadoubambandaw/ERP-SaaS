@@ -23,6 +23,8 @@ import LeavesPage from './pages/hr/Leaves';
 import SuppliersPage from './pages/purchasing/Suppliers';
 import PurchaseOrdersPage from './pages/purchasing/PurchaseOrders';
 import LandingPage from './pages/public/Landing';
+import SubscriptionExpiredPage from './pages/subscription/SubscriptionExpired';
+import PlatformAdminPage from './pages/admin/PlatformAdmin';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -42,6 +44,14 @@ export default function App() {
         <Route path="/" element={<HomeGate />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/subscription-expired"
+          element={
+            <PrivateRoute>
+              <SubscriptionExpiredPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           element={
             <PrivateRoute>
@@ -88,6 +98,7 @@ export default function App() {
 
           <Route path="accounting" element={<AccountingPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="admin" element={<PlatformAdminPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

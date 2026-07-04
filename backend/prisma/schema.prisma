@@ -17,7 +17,8 @@ model Organization {
   country     String   @default("SN")
   currency    String   @default("XOF")
   language    String   @default("fr")
-  plan        Plan     @default(STARTER)
+  plan          Plan      @default(STARTER)
+  planExpiresAt DateTime?
   isActive    Boolean  @default(true)
   logo        String?
   address     String?

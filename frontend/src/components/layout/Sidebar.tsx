@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Package, Users, BarChart2, ShoppingCart,
-  FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp, X,
+  FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp, X, Shield,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/auth.store';
@@ -60,7 +60,11 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const location = useLocation();
-  const { organization } = useAuthStore();
+  const { organization, user } = useAuthStore();
+
+  const items = user?.role === 'SUPER_ADMIN'
+    ? [...navItems, { label: 'Plateforme', icon: Shield, to: '/admin' }]
+    : navItems;
 
   const nav = (
     <>
@@ -96,7 +100,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 space-y-1">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname.startsWith(item.to);
           const hasChildren = item.children && item.children.length > 0;

@@ -44,6 +44,8 @@ export class AuthService {
         slug: data.organizationSlug,
         country: data.country,
         currency: data.currency,
+        // 14 jours d'essai gratuit pour toute nouvelle organisation
+        planExpiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         users: {
           create: {
             firstName: data.firstName,

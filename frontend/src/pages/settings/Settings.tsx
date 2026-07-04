@@ -1,12 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock } from 'lucide-react';
+import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { usersService, organizationService, authService } from '../../services/api';
+import { usersService, organizationService, authService, subscriptionService } from '../../services/api';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { getApiError } from '../../utils/apiError';
 import { useAuthStore } from '../../store/auth.store';
+import { PLAN_LABELS, PLAN_PRICES, PAYMENT_NUMBER, PAYMENT_NAME, formatDateFr } from '../../utils/subscription';
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: 'Super Admin',
@@ -140,6 +141,14 @@ export default function SettingsPage() {
     queryKey: ['organization'],
     queryFn: () => organizationService.get(),
   });
+
+  const { data: subData } = useQuery({
+    queryKey: ['subscription'],
+    queryFn: () => subscriptionService.me(),
+  });
+  const sub = subData?.data?.data as
+    | { plan: string; planExpiresAt: string | null; unlimited: boolean; active: boolean; daysLeft: number | null }
+    | undefined;
   const orgDetails: OrgDetails | undefined = orgData?.data?.data;
 
   useEffect(() => {
@@ -507,6 +516,46 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* ===== Abonnement ===== */}
+      <div className="card p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <CreditCard className="w-5 h-5 text-primary-600" />
+          <h2 className="font-semibold text-gray-900">Abonnement</h2>
+        </div>
+        {sub && (
+          <>
+            <div className="flex flex-wrap items-center gap-3 mb-4">
+              <span className="badge badge-blue text-sm">{PLAN_LABELS[sub.plan] || sub.plan}</span>
+              {sub.unlimited ? (
+                <span className="badge badge-green">Accès illimité</span>
+              ) : sub.active ? (
+                <span className={`badge ${(sub.daysLeft ?? 99) <= 7 ? 'badge-yellow' : 'badge-green'}`}>
+                  Actif — expire le {formatDateFr(sub.planExpiresAt!)} ({sub.daysLeft} jour{(sub.daysLeft ?? 0) > 1 ? 's' : ''})
+                </span>
+              ) : (
+                <span className="badge badge-red">Expiré</span>
+              )}
+              {PLAN_PRICES[sub.plan] && (
+                <span className="text-sm text-gray-400">{PLAN_PRICES[sub.plan]}</span>
+              )}
+            </div>
+            {!sub.unlimited && (
+              <div className="p-4 bg-gray-50 rounded-xl text-sm text-gray-600">
+                <p className="font-medium text-gray-900 flex items-center gap-2 mb-2">
+                  <Smartphone className="w-4 h-4 text-primary-600" /> Pour renouveler
+                </p>
+                <p>
+                  Envoyez le montant par <strong>Wave</strong> ou <strong>Orange Money</strong> au{' '}
+                  <strong className="text-gray-900">{PAYMENT_NUMBER}</strong> ({PAYMENT_NAME}),
+                  puis la capture du paiement par WhatsApp au même numéro.
+                  Activation sous 24h.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="card p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Informations système</h2>

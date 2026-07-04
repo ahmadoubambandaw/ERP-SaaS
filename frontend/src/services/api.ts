@@ -26,6 +26,10 @@ api.interceptors.response.use(
   (res) => res,
   async (error: AxiosError) => {
     const original = error.config as typeof error.config & { _retry?: boolean };
+    if (error.response?.status === 402 && window.location.pathname !== '/subscription-expired') {
+      window.location.href = '/subscription-expired';
+      return Promise.reject(error);
+    }
     if (error.response?.status === 401 && !original._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -128,6 +132,12 @@ export const hrService = {
 export const organizationService = {
   get: () => api.get('/organization'),
   update: (data: unknown) => api.patch('/organization', data),
+};
+
+export const subscriptionService = {
+  me: () => api.get('/subscription'),
+  organizations: () => api.get('/subscription/organizations'),
+  updateOrganization: (id: string, data: unknown) => api.patch(`/subscription/organizations/${id}`, data),
 };
 
 export const usersService = {

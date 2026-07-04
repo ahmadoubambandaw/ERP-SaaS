@@ -54,6 +54,10 @@ export function authorize(...roles: string[]) {
       next(new AppError('Non authentifié', 401));
       return;
     }
+    if (req.user.role === 'SUPER_ADMIN') {
+      next();
+      return;
+    }
     if (roles.length && !roles.includes(req.user.role)) {
       next(new AppError('Accès non autorisé', 403, 'FORBIDDEN'));
       return;
