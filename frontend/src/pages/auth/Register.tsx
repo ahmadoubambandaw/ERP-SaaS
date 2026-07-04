@@ -45,6 +45,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [step, setStep] = useState<'plan' | 'form'>('plan');
   const [selectedPlan, setSelectedPlan] = useState('PROFESSIONAL');
+  const [referralCode] = useState(() => new URLSearchParams(window.location.search).get('ref') || '');
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
 
@@ -54,7 +55,8 @@ export default function RegisterPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await authService.register({ ...data, plan: selectedPlan });
+      const code = (data.referralCode || referralCode || '').trim();
+      const res = await authService.register({ ...data, plan: selectedPlan, referralCode: code || undefined });
       const { user, tokens, organization } = res.data.data;
       setAuth(user, organization, tokens.accessToken, tokens.refreshToken);
       navigate('/');
@@ -196,6 +198,12 @@ export default function RegisterPage() {
             <div>
               <label className="label">Mot de passe</label>
               <input {...register('password', { required: true, minLength: 8 })} type="password" className="input" placeholder="8+ caracteres, maj, min, chiffre" />
+            </div>
+
+            <div>
+              <label className="label">Code de parrainage <span className="text-gray-400 font-normal">(optionnel)</span></label>
+              <input {...register('referralCode')} defaultValue={referralCode} className="input" placeholder="NA-XXXXX" />
+              {referralCode && <p className="text-xs text-green-600 mt-1">🎁 Code appliqué — 7 jours d'essai bonus (21 jours au total) !</p>}
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3">
