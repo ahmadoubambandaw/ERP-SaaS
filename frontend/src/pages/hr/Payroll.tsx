@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Play, Check, Loader2, X } from 'lucide-react';
+import { Play, Check, Loader2, X, Download } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { hrService } from '../../services/api';
@@ -7,12 +7,15 @@ import { getApiError } from '../../utils/apiError';
 import { formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import StatusBadge from '../../components/ui/StatusBadge';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
+import { exportToCsv } from '../../utils/exportCsv';
 
 export default function PayrollPage() {
   const { organization } = useAuthStore();
   const currency = organization?.currency || 'XOF';
   const [period, setPeriod] = useState(new Date().toISOString().slice(0, 7));
   const [errorMsg, setErrorMsg] = useState('');
+  const [toApprove, setToApprove] = useState<Record<string, unknown> | null>(null);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({ queryKey: ['payslips', period], queryFn: () => hrService.payslips(period) });
@@ -26,7 +29,7 @@ export default function PayrollPage() {
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => hrService.approvePayslip(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['payslips'] }); toast.success('Bulletin approuvé'); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['payslips'] }); setToApprove(null); toast.success('Bulletin approuvé'); },
     onError: (err: unknown) => setErrorMsg(getApiError(err)),
   });
 
@@ -40,6 +43,18 @@ export default function PayrollPage() {
           <p className="text-gray-500 text-sm">Gestion de la paie mensuelle</p>
         </div>
         <div className="flex items-center gap-3">
+          {payslips.length > 0 && (
+            <button
+              onClick={() => exportToCsv(`paie-${period}`, ['Employé', 'Poste', 'Salaire brut', 'Cotisations', 'IRPP', 'Salaire net', 'Statut'],
+                payslips.map((ps: Record<string, unknown>) => {
+                  const emp = ps.employee as Record<string, unknown>;
+                  return [`${emp?.firstName} ${emp?.lastName}`, emp?.position as string, Number(ps.baseSalary), Number(ps.socialSecurity), Number(ps.incomeTax), Number(ps.netSalary), ps.status as string];
+                }))}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" /> Exporter
+            </button>
+          )}
           <input type="month" value={period} onChange={(e) => setPeriod(e.target.value)} className="input w-40" />
           <button onClick={() => generateMutation.mutate()} disabled={generateMutation.isPending} className="btn-primary flex items-center gap-2">
             {generateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
@@ -101,7 +116,7 @@ export default function PayrollPage() {
                   <td className="px-6 py-4"><StatusBadge status={p.status as string} /></td>
                   <td className="px-6 py-4">
                     {p.status === 'DRAFT' && (
-                      <button onClick={() => approveMutation.mutate(p.id as string)} className="p-1.5 hover:bg-green-50 text-green-600 rounded">
+                      <button onClick={() => setToApprove(p)} className="p-1.5 hover:bg-green-50 text-green-600 rounded">
                         <Check className="w-4 h-4" />
                       </button>
                     )}
@@ -112,6 +127,16 @@ export default function PayrollPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={!!toApprove}
+        title="Approuver ce bulletin ?"
+        message={toApprove ? `${(toApprove.employee as Record<string, unknown>)?.firstName} ${(toApprove.employee as Record<string, unknown>)?.lastName} — net à payer : ${formatCurrency(toApprove.netSalary as number, currency)}` : ''}
+        confirmLabel="Approuver"
+        loading={approveMutation.isPending}
+        onConfirm={() => toApprove && approveMutation.mutate(toApprove.id as string)}
+        onCancel={() => setToApprove(null)}
+      />
     </div>
   );
 }

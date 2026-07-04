@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Truck, Loader2 } from 'lucide-react';
+import { Plus, Truck, Loader2, Download } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { invoicingService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
+import { exportToCsv } from '../../utils/exportCsv';
 
 interface SupplierFormData {
   name: string;
@@ -58,9 +59,20 @@ export default function SuppliersPage() {
           <h1 className="text-2xl font-bold text-gray-900">Fournisseurs</h1>
           <p className="text-gray-500 text-sm">{suppliers.length} fournisseur(s)</p>
         </div>
-        <button onClick={() => { setShowForm(true); setErrorMsg(''); }} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouveau fournisseur
-        </button>
+        <div className="flex items-center gap-2">
+          {suppliers.length > 0 && (
+            <button
+              onClick={() => exportToCsv('fournisseurs', ['Nom', 'Email', 'Téléphone', 'Adresse', 'Pays', 'NINEA/NIF'],
+                suppliers.map((sp) => [sp.name, sp.email, sp.phone, sp.address, sp.country, sp.taxId]))}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" /> Exporter
+            </button>
+          )}
+          <button onClick={() => { setShowForm(true); setErrorMsg(''); }} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Nouveau fournisseur
+          </button>
+        </div>
       </div>
 
       {showForm && (

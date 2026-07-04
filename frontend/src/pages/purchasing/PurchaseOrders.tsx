@@ -8,6 +8,7 @@ import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import StatusBadge from '../../components/ui/StatusBadge';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 interface POLine {
   productId: string;
@@ -59,6 +60,7 @@ export default function PurchaseOrdersPage() {
   const [showForm, setShowForm] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [actionError, setActionError] = useState('');
+  const [action, setAction] = useState<{ po: PurchaseOrder; type: 'receive' | 'cancel' } | null>(null);
   const qc = useQueryClient();
 
   const { register, handleSubmit, reset, control, watch } = useForm<POFormData>({
@@ -117,12 +119,12 @@ export default function PurchaseOrdersPage() {
   });
   const receiveMutation = useMutation({
     mutationFn: (id: string) => inventoryService.receivePurchaseOrder(id),
-    onSuccess: () => { invalidateAll(); toast.success('Marchandise réceptionnée — stock mis à jour'); },
+    onSuccess: () => { invalidateAll(); setAction(null); toast.success('Marchandise réceptionnée — stock mis à jour'); },
     onError: (err: unknown) => setActionError(getApiError(err)),
   });
   const cancelMutation = useMutation({
     mutationFn: (id: string) => inventoryService.cancelPurchaseOrder(id),
-    onSuccess: () => { invalidateAll(); toast.success('Bon de commande annulé'); },
+    onSuccess: () => { invalidateAll(); setAction(null); toast.success('Bon de commande annulé'); },
     onError: (err: unknown) => setActionError(getApiError(err)),
   });
 
@@ -289,7 +291,7 @@ export default function PurchaseOrdersPage() {
                           <Check className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => cancelMutation.mutate(o.id)}
+                          onClick={() => setAction({ po: o, type: 'cancel' })}
                           title="Annuler"
                           className="p-1.5 hover:bg-red-50 text-red-500 rounded transition-colors"
                         >
@@ -299,7 +301,7 @@ export default function PurchaseOrdersPage() {
                     )}
                     {o.status === 'CONFIRMED' && (
                       <button
-                        onClick={() => receiveMutation.mutate(o.id)}
+                        onClick={() => setAction({ po: o, type: 'receive' })}
                         title="Réceptionner (met à jour le stock)"
                         className="p-1.5 hover:bg-green-50 text-green-600 rounded transition-colors flex items-center gap-1 text-xs font-medium"
                       >
@@ -313,6 +315,25 @@ export default function PurchaseOrdersPage() {
           </tbody>
         </table>
       </div>
+
+      <ConfirmDialog
+        open={!!action}
+        title={action?.type === 'receive' ? 'Réceptionner cette commande ?' : 'Annuler ce bon de commande ?'}
+        message={action
+          ? action.type === 'receive'
+            ? `${action.po.number} — le stock de ${action.po.lines.length} article(s) sera augmenté.`
+            : `${action.po.number} — cette action est définitive.`
+          : ''}
+        confirmLabel={action?.type === 'receive' ? 'Réceptionner' : 'Annuler la commande'}
+        danger={action?.type === 'cancel'}
+        loading={receiveMutation.isPending || cancelMutation.isPending}
+        onConfirm={() => {
+          if (!action) return;
+          if (action.type === 'receive') receiveMutation.mutate(action.po.id);
+          else cancelMutation.mutate(action.po.id);
+        }}
+        onCancel={() => setAction(null)}
+      />
     </div>
   );
 }

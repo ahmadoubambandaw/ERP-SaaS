@@ -10,6 +10,7 @@ import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import StatusBadge from '../../components/ui/StatusBadge';
+import ConfirmDialog from '../../components/ui/ConfirmDialog';
 
 const PAYMENT_METHODS = [
   { value: 'CASH', label: 'Espèces' },
@@ -85,6 +86,7 @@ export default function InvoiceDetailPage() {
   const currency = organization?.currency || 'XOF';
   const qc = useQueryClient();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['invoice', id],
@@ -191,7 +193,7 @@ export default function InvoiceDetailPage() {
                 Envoyer
               </button>
               <button
-                onClick={() => { if (confirm('Supprimer cette facture ?')) deleteMutation.mutate(); }}
+                onClick={() => setConfirmDelete(true)}
                 className="p-2 hover:bg-red-50 text-red-500 rounded-lg"
                 title="Supprimer"
               >
@@ -388,6 +390,17 @@ export default function InvoiceDetailPage() {
           <p className="text-gray-600 text-sm whitespace-pre-line">{inv.notes}</p>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Supprimer cette facture ?"
+        message={`${inv.number} — cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        danger
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }
