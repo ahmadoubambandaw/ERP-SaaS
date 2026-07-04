@@ -25,6 +25,7 @@ import PurchaseOrdersPage from './pages/purchasing/PurchaseOrders';
 import LandingPage from './pages/public/Landing';
 import SubscriptionExpiredPage from './pages/subscription/SubscriptionExpired';
 import PlatformAdminPage from './pages/admin/PlatformAdmin';
+import BillingReturnPage from './pages/billing/BillingReturn';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -49,6 +50,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <SubscriptionExpiredPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/billing/return"
+          element={
+            <PrivateRoute>
+              <BillingReturnPage />
             </PrivateRoute>
           }
         />

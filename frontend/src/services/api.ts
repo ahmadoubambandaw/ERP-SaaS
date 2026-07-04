@@ -148,6 +148,11 @@ export const subscriptionService = {
   updateOrganization: (id: string, data: unknown) => api.patch(`/subscription/organizations/${id}`, data),
 };
 
+export const billingService = {
+  checkout: () => api.post('/billing/checkout'),
+  verify: () => api.post('/billing/verify'),
+};
+
 export const usersService = {
   list: () => api.get('/users'),
   create: (data: unknown) => api.post('/users', data),

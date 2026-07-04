@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Smartphone, RefreshCw, LogOut, MessageCircle } from 'lucide-react';
+import { Lock, Smartphone, RefreshCw, LogOut, MessageCircle, CreditCard } from 'lucide-react';
+import { startCheckout } from '../../utils/checkout';
 import { subscriptionService, authService } from '../../services/api';
 import { useAuthStore } from '../../store/auth.store';
 import { PLAN_LABELS, PLAN_PRICES, PAYMENT_NUMBER, PAYMENT_NAME, formatDateFr } from '../../utils/subscription';
@@ -62,6 +63,13 @@ export default function SubscriptionExpiredPage() {
         </div>
 
         <div className="mt-6 space-y-3">
+          <button
+            onClick={() => startCheckout()}
+            className="btn-primary w-full flex items-center justify-center gap-2"
+          >
+            <CreditCard className="w-4 h-4" />
+            Payer en ligne (Wave · Orange Money · Carte)
+          </button>
           <button
             onClick={checkAgain}
             disabled={isFetching}

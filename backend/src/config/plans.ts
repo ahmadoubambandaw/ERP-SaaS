@@ -34,3 +34,9 @@ export function planHasModule(plan: string, module: PlanModule): boolean {
 export function planUserLimit(plan: string): number {
   return PLAN_USER_LIMITS[plan] ?? PLAN_USER_LIMITS.STARTER;
 }
+
+// Prix mensuel par formule (XOF) pour le paiement en ligne
+export const PLAN_PRICE_XOF: Record<string, number> = {
+  STARTER: 15000,
+  PROFESSIONAL: 25000,
+};

@@ -46,6 +46,7 @@ model Organization {
   leads           Lead[]
   opportunities   Opportunity[]
   purchaseOrders  PurchaseOrder[]
+  subscriptionPayments SubscriptionPayment[]
 
   @@index([slug])
 }
@@ -745,4 +746,24 @@ model Milestone {
 
   project Project @relation(fields: [projectId], references: [id])
   tasks   Task[]
+}
+
+// ==================== ABONNEMENT / PAIEMENTS PLATEFORME ====================
+
+model SubscriptionPayment {
+  id             String    @id @default(cuid())
+  organizationId String
+  plan           Plan
+  months         Int       @default(1)
+  amount         Decimal   @db.Decimal(15, 2)
+  currency       String    @default("XOF")
+  provider       String    @default("PAYDUNYA")
+  token          String    @unique
+  status         String    @default("PENDING")
+  createdAt      DateTime  @default(now())
+  paidAt         DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
 }
