@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { crmService, invoicingService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { formatCurrency } from '../../utils/format';
@@ -66,6 +67,7 @@ export default function OpportunitiesPage() {
       setShowForm(false);
       setErrorMsg('');
       reset();
+      toast.success('Opportunité créée');
     },
     onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la création de l\'opportunité')),
   });

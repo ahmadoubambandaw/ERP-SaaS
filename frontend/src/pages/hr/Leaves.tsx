@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Check, Calendar, Clock, X } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { hrService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { formatDate } from '../../utils/format';
@@ -70,6 +71,7 @@ export default function LeavesPage() {
       setShowForm(false);
       setErrorMsg('');
       reset();
+      toast.success('Demande de congé soumise');
     },
     onError: (err: unknown) => {
       setErrorMsg(getApiError(err, 'Erreur lors de la soumission de la demande'));
@@ -78,12 +80,14 @@ export default function LeavesPage() {
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => hrService.approveLeave(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['leaves'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['leaves'] }); toast.success('Congé approuvé'); },
+    onError: (err: unknown) => toast.error(getApiError(err)),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (id: string) => hrService.rejectLeave(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['leaves'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['leaves'] }); toast.success('Congé refusé'); },
+    onError: (err: unknown) => toast.error(getApiError(err)),
   });
 
   const pending = leaves.filter((l) => l.status === 'PENDING');

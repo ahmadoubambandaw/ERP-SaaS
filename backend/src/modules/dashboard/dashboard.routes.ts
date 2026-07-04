@@ -12,3 +12,5 @@ dashboardRouter.get('/kpis', ctrl.kpis);
 dashboardRouter.get('/revenue-chart', ctrl.revenueChart);
 dashboardRouter.get('/recent-invoices', ctrl.recentInvoices);
 dashboardRouter.get('/recent-activities', ctrl.recentActivities);
+dashboardRouter.get('/search', ctrl.search);
+dashboardRouter.get('/alerts', ctrl.alerts);

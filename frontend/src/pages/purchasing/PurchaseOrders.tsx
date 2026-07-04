@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, ShoppingCart, Check, PackageCheck, X, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { inventoryService, invoicingService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
@@ -104,23 +105,24 @@ export default function PurchaseOrdersPage() {
       setShowForm(false);
       setErrorMsg('');
       reset();
+      toast.success('Bon de commande créé');
     },
     onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la création du bon de commande')),
   });
 
   const confirmMutation = useMutation({
     mutationFn: (id: string) => inventoryService.confirmPurchaseOrder(id),
-    onSuccess: invalidateAll,
+    onSuccess: () => { invalidateAll(); toast.success('Bon de commande confirmé'); },
     onError: (err: unknown) => setActionError(getApiError(err)),
   });
   const receiveMutation = useMutation({
     mutationFn: (id: string) => inventoryService.receivePurchaseOrder(id),
-    onSuccess: invalidateAll,
+    onSuccess: () => { invalidateAll(); toast.success('Marchandise réceptionnée — stock mis à jour'); },
     onError: (err: unknown) => setActionError(getApiError(err)),
   });
   const cancelMutation = useMutation({
     mutationFn: (id: string) => inventoryService.cancelPurchaseOrder(id),
-    onSuccess: invalidateAll,
+    onSuccess: () => { invalidateAll(); toast.success('Bon de commande annulé'); },
     onError: (err: unknown) => setActionError(getApiError(err)),
   });
 

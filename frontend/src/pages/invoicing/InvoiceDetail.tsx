@@ -1,9 +1,12 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2, Download } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useState } from 'react';
 import { invoicingService } from '../../services/api';
+import { generateInvoicePdf } from '../../utils/invoicePdf';
+import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -55,9 +58,16 @@ interface Invoice {
   total: number;
   paidAmount: number;
   notes?: string;
-  customer: { id: string; name: string; email?: string };
+  customer: {
+    id: string; name: string; email?: string; phone?: string;
+    address?: string; city?: string; taxId?: string;
+  };
   lines: InvoiceLine[];
   payments: InvoicePayment[];
+  organization?: {
+    name?: string; address?: string; phone?: string;
+    email?: string; taxId?: string; currency?: string;
+  };
 }
 
 interface PaymentFormData {
@@ -86,12 +96,20 @@ export default function InvoiceDetailPage() {
 
   const sendMutation = useMutation({
     mutationFn: () => invoicingService.send(id!),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['invoice', id] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['invoice', id] });
+      toast.success('Facture marquée comme envoyée');
+    },
+    onError: (err: unknown) => toast.error(getApiError(err)),
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => invoicingService.delete(id!),
-    onSuccess: () => navigate('/invoicing'),
+    onSuccess: () => {
+      toast.success('Facture supprimée');
+      navigate('/invoicing');
+    },
+    onError: (err: unknown) => toast.error(getApiError(err)),
   });
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<PaymentFormData>({
@@ -112,7 +130,9 @@ export default function InvoiceDetailPage() {
       qc.invalidateQueries({ queryKey: ['invoices'] });
       setShowPaymentForm(false);
       reset();
+      toast.success('Paiement enregistré');
     },
+    onError: (err: unknown) => toast.error(getApiError(err)),
   });
 
   if (isLoading) {
@@ -154,6 +174,12 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => generateInvoicePdf(inv, organization?.name)}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" /> PDF
+          </button>
           {isDraft && (
             <>
               <button

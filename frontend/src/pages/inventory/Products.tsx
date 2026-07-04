@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Package, AlertTriangle, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { inventoryService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { formatCurrency } from '../../utils/format';
@@ -28,6 +29,7 @@ export default function ProductsPage() {
       setShowForm(false);
       setErrorMsg('');
       reset();
+      toast.success('Produit enregistré');
     },
     onError: (err: unknown) => {
       setErrorMsg(getApiError(err, 'Erreur lors de l\'enregistrement du produit'));

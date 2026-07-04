@@ -73,6 +73,8 @@ export const dashboardService = {
   kpis: () => api.get('/dashboard/kpis'),
   revenueChart: () => api.get('/dashboard/revenue-chart'),
   recentInvoices: () => api.get('/dashboard/recent-invoices'),
+  search: (q: string) => api.get('/dashboard/search', { params: { q } }),
+  alerts: () => api.get('/dashboard/alerts'),
 };
 
 export const invoicingService = {

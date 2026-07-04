@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, User, Users, Plus, Loader2, UserX, UserCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { usersService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { useAuthStore } from '../../store/auth.store';
@@ -61,13 +62,14 @@ export default function SettingsPage() {
       setShowForm(false);
       setErrorMsg('');
       reset();
+      toast.success('Utilisateur créé');
     },
     onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la création de l\'utilisateur')),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: unknown }) => usersService.update(id, data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['users'] }); toast.success('Utilisateur mis à jour'); },
     onError: (err: unknown) => setErrorMsg(getApiError(err)),
   });
 

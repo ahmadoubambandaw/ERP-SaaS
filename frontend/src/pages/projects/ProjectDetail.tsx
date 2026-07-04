@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { projectsService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -24,7 +25,7 @@ export default function ProjectDetailPage() {
 
   const createTask = useMutation({
     mutationFn: (d: unknown) => projectsService.createTask(id!, d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project', id] }); setShowTaskForm(false); setErrorMsg(''); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['project', id] }); setShowTaskForm(false); setErrorMsg(''); reset(); toast.success('Tâche ajoutée'); },
     onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la création de la tâche')),
   });
 

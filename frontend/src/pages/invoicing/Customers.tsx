@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Users, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { invoicingService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 
@@ -16,7 +17,7 @@ export default function CustomersPage() {
 
   const mutation = useMutation({
     mutationFn: (data: unknown) => invoicingService.createCustomer(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); setShowForm(false); setErrorMsg(''); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['customers'] }); setShowForm(false); setErrorMsg(''); reset(); toast.success('Client enregistré'); },
     onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de l\'enregistrement du client')),
   });
 

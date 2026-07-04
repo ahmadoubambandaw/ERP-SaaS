@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Play, Check, Loader2, X } from 'lucide-react';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { hrService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { formatCurrency } from '../../utils/format';
@@ -19,13 +20,13 @@ export default function PayrollPage() {
 
   const generateMutation = useMutation({
     mutationFn: () => hrService.generatePayslips(period),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['payslips'] }); setErrorMsg(''); },
+    onSuccess: (res) => { qc.invalidateQueries({ queryKey: ['payslips'] }); setErrorMsg(''); toast.success(`${res?.data?.data?.length ?? ''} bulletin(s) généré(s)`); },
     onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la génération de la paie')),
   });
 
   const approveMutation = useMutation({
     mutationFn: (id: string) => hrService.approvePayslip(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['payslips'] }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['payslips'] }); toast.success('Bulletin approuvé'); },
     onError: (err: unknown) => setErrorMsg(getApiError(err)),
   });
 
