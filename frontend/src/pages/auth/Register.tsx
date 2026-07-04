@@ -4,6 +4,7 @@ import { Building2, Loader2, Check, ArrowLeft, Gift } from 'lucide-react';
 import { useState } from 'react';
 import { authService } from '../../services/api';
 import { useAuthStore } from '../../store/auth.store';
+import Logo from '../../components/ui/Logo';
 
 const CURRENCIES = [{ code: 'XOF', label: 'FCFA Ouest (XOF)' }, { code: 'XAF', label: 'FCFA Centre (XAF)' }, { code: 'GNF', label: 'Franc Guineen (GNF)' }, { code: 'MAD', label: 'Dirham (MAD)' }, { code: 'NGN', label: 'Naira (NGN)' }, { code: 'KES', label: 'Shilling Kenya (KES)' }];
 const COUNTRIES = [{ code: 'SN', label: 'Senegal' }, { code: 'CI', label: "Cote d'Ivoire" }, { code: 'ML', label: 'Mali' }, { code: 'BF', label: 'Burkina Faso' }, { code: 'GN', label: 'Guinee' }, { code: 'TG', label: 'Togo' }, { code: 'BJ', label: 'Benin' }, { code: 'NG', label: 'Nigeria' }, { code: 'CM', label: 'Cameroun' }, { code: 'MA', label: 'Maroc' }, { code: 'DZ', label: 'Algerie' }, { code: 'TN', label: 'Tunisie' }];
@@ -71,9 +72,7 @@ export default function RegisterPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-primary-900 to-gray-900 flex items-center justify-center p-4">
         <div className="w-full max-w-4xl py-8">
           <div className="text-center mb-6">
-            <div className="w-14 h-14 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <Building2 className="w-7 h-7 text-white" />
-            </div>
+            <Logo className="w-14 h-14 mx-auto mb-3" />
             <h1 className="text-2xl md:text-3xl font-bold text-white">Choisissez votre formule</h1>
             <div className="inline-flex items-center gap-2 mt-3 bg-green-500/20 text-green-300 text-sm font-medium px-4 py-1.5 rounded-full">
               <Gift className="w-4 h-4" /> 14 jours d'essai gratuit · sans carte bancaire
@@ -127,9 +126,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-primary-900 to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-primary-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <Building2 className="w-7 h-7 text-white" />
-          </div>
+          <Logo className="w-14 h-14 mx-auto mb-3" />
           <h1 className="text-2xl font-bold text-white">Creer votre espace</h1>
         </div>
 

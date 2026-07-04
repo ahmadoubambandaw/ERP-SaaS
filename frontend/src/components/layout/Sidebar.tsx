@@ -10,6 +10,7 @@ import { useAuthStore } from '../../store/auth.store';
 import { subscriptionService } from '../../services/api';
 import { planHasModule, PlanModule } from '../../utils/plans';
 import { clsx } from 'clsx';
+import Logo from '../ui/Logo';
 
 interface NavItem {
   label: string;
@@ -104,9 +105,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
             {organization?.logo ? (
               <img src={organization.logo} alt="" className="w-8 h-8 rounded-lg object-contain bg-white" />
             ) : (
-              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                <Building2 className="w-5 h-5" />
-              </div>
+              <Logo className="w-8 h-8" />
             )}
             <div>
               <p className="text-sm font-bold leading-none">{organization?.name || 'Naatal'}</p>

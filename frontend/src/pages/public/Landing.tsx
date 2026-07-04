@@ -5,6 +5,7 @@ import {
   Store, Utensils, Wrench, Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
+import Logo from '../../components/ui/Logo';
 
 // Numéro WhatsApp de contact (format international sans +)
 const WHATSAPP = '221774140900';
@@ -104,9 +105,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-white" />
-            </div>
+            <Logo className="w-9 h-9" />
             <span className="font-bold text-gray-900 text-lg">Naatal</span>
           </div>
 
