@@ -73,7 +73,7 @@ export default function ProjectDetailPage() {
 
       {showTaskForm && (
         <div className="card p-6">
-          <form onSubmit={handleSubmit((d) => createTask.mutate(d))} className="grid grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => createTask.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="col-span-2"><label className="label">Titre *</label><input {...register('title', { required: true })} className="input" /></div>
             <div><label className="label">Priorite</label>
               <select {...register('priority')} className="input">
@@ -84,7 +84,7 @@ export default function ProjectDetailPage() {
               </select>
             </div>
             <div><label className="label">Echeance</label><input {...register('dueDate')} type="date" className="input" /></div>
-            <div className="col-span-3 flex gap-3 justify-end">
+            <div className="col-span-full flex gap-3 justify-end">
               <button type="button" onClick={() => setShowTaskForm(false)} className="btn-secondary">Annuler</button>
               <button type="submit" className="btn-primary">Ajouter</button>
             </div>
@@ -92,7 +92,7 @@ export default function ProjectDetailPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {taskStatuses.map((status) => (
           <div key={status}>
             <div className="flex items-center justify-between mb-3">

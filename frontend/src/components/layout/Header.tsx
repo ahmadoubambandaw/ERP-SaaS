@@ -1,10 +1,10 @@
-import { Bell, Search, LogOut, User, ChevronDown } from 'lucide-react';
+import { Bell, Search, LogOut, User, ChevronDown, Menu } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import { authService } from '../../services/api';
 
-export default function Header() {
+export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, organization, refreshToken, logout } = useAuthStore();
   const [showUser, setShowUser] = useState(false);
   const navigate = useNavigate();
@@ -19,7 +19,14 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+    <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between gap-3">
+      <button
+        onClick={onMenuClick}
+        className="lg:hidden p-2 -ml-1 text-gray-600 hover:bg-gray-100 rounded-lg"
+        aria-label="Ouvrir le menu"
+      >
+        <Menu className="w-6 h-6" />
+      </button>
       <div className="flex items-center gap-3 flex-1 max-w-md">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

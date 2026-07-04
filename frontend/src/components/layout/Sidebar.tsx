@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Package, Users, BarChart2, ShoppingCart,
-  FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp,
+  FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp, X,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useAuthStore } from '../../store/auth.store';
@@ -51,19 +51,19 @@ const navItems = [
   { label: 'Parametres', icon: Settings, to: '/settings' },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const location = useLocation();
   const { organization } = useAuthStore();
 
-  return (
-    <aside
-      className={clsx(
-        'bg-gray-900 text-white flex flex-col transition-all duration-300 min-h-screen',
-        collapsed ? 'w-16' : 'w-64',
-      )}
-    >
+  const nav = (
+    <>
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
         {!collapsed && (
           <div className="flex items-center gap-2">
@@ -76,11 +76,18 @@ export default function Sidebar() {
             </div>
           </div>
         )}
+        {/* Collapse toggle on desktop, close button on mobile */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1 rounded hover:bg-gray-700 text-gray-400"
+          className="hidden lg:block p-1 rounded hover:bg-gray-700 text-gray-400"
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
+        <button
+          onClick={onClose}
+          className="lg:hidden p-1.5 rounded hover:bg-gray-700 text-gray-400"
+        >
+          <X className="w-5 h-5" />
         </button>
       </div>
 
@@ -154,6 +161,33 @@ export default function Sidebar() {
           <p className="text-xs text-gray-500 text-center">ERP SaaS v1.0</p>
         )}
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Drawer on mobile, static sidebar on desktop */}
+      <aside
+        className={clsx(
+          'bg-gray-900 text-white flex flex-col transition-all duration-300',
+          // Mobile: fixed drawer that slides in
+          'fixed inset-y-0 left-0 z-50 w-72 transform',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          // Desktop: back in the normal flow
+          'lg:static lg:translate-x-0 lg:min-h-screen',
+          collapsed ? 'lg:w-16' : 'lg:w-64',
+        )}
+      >
+        {nav}
+      </aside>
+    </>
   );
 }

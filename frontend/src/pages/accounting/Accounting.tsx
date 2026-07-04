@@ -308,7 +308,7 @@ export default function AccountingPage() {
       {showJournalForm && (
         <div className="card p-6 border-2 border-primary-100">
           <h3 className="font-semibold text-gray-900 mb-4">Nouveau journal</h3>
-          <form onSubmit={journalForm.handleSubmit((d) => createJournal.mutate(d))} className="grid grid-cols-3 gap-4">
+          <form onSubmit={journalForm.handleSubmit((d) => createJournal.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <label className="label">Code *</label>
               <input {...journalForm.register('code', { required: true })} className="input font-mono" placeholder="VTE" />
@@ -323,7 +323,7 @@ export default function AccountingPage() {
                 {JOURNAL_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
-            <div className="col-span-3 flex justify-end gap-3">
+            <div className="col-span-full flex justify-end gap-3">
               <button type="button" onClick={() => { setShowJournalForm(false); journalForm.reset(); }} className="btn-secondary">Annuler</button>
               <button type="submit" disabled={createJournal.isPending} className="btn-primary">Créer</button>
             </div>

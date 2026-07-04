@@ -46,7 +46,7 @@ export default function ProjectsPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
             <div><label className="label">Statut</label>
               <select {...register('status')} className="input">
@@ -57,8 +57,8 @@ export default function ProjectsPage() {
             <div><label className="label">Date debut</label><input {...register('startDate')} type="date" className="input" /></div>
             <div><label className="label">Date fin</label><input {...register('endDate')} type="date" className="input" /></div>
             <div><label className="label">Budget</label><input {...register('budget', { valueAsNumber: true })} type="number" className="input" /></div>
-            <div className="col-span-3"><label className="label">Description</label><textarea {...register('description')} className="input h-20 resize-none" /></div>
-            <div className="col-span-3 flex gap-3 justify-end">
+            <div className="col-span-full"><label className="label">Description</label><textarea {...register('description')} className="input h-20 resize-none" /></div>
+            <div className="col-span-full flex gap-3 justify-end">
               <button type="button" onClick={() => { setShowForm(false); setErrorMsg(''); reset(); }} className="btn-secondary">Annuler</button>
               <button type="submit" disabled={mutation.isPending} className="btn-primary flex items-center gap-2">
                 {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}

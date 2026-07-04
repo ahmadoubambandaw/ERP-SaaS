@@ -55,7 +55,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <KpiCard title="Produits" value={kpis?.products || 0} icon={Package} color="blue" />
         <KpiCard title="Prospects CRM" value={kpis?.leads || 0} icon={TrendingUp} color="green" />
         <KpiCard title="Projets" value={kpis?.projects || 0} icon={CheckCircle} color="purple" />
@@ -82,7 +82,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="col-span-2 card">
           <div className="px-6 py-4 border-b border-gray-100">
             <h3 className="font-semibold text-gray-900">Evolution du chiffre d'affaires (12 mois)</h3>

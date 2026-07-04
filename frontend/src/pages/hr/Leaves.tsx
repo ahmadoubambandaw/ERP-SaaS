@@ -102,7 +102,7 @@ export default function LeavesPage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
         <div className="card p-4 text-center">
           <div className="flex items-center justify-center gap-1.5 mb-1">
             <Clock className="w-4 h-4 text-orange-500" />
