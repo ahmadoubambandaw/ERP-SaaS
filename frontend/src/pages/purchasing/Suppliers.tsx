@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Truck, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { invoicingService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 
@@ -43,6 +44,7 @@ export default function SuppliersPage() {
       setShowForm(false);
       setErrorMsg('');
       reset();
+      toast.success('Fournisseur enregistré');
     },
     onError: (err: unknown) => {
       setErrorMsg(getApiError(err, 'Erreur lors de l\'enregistrement du fournisseur'));

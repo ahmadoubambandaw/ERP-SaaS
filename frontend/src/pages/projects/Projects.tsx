@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, FolderKanban, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 import { projectsService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
@@ -22,7 +23,7 @@ export default function ProjectsPage() {
 
   const mutation = useMutation({
     mutationFn: (d: unknown) => projectsService.create(d),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['projects'] }); setShowForm(false); setErrorMsg(''); reset(); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['projects'] }); setShowForm(false); setErrorMsg(''); reset(); toast.success('Projet créé'); },
     onError: (err: unknown) => setErrorMsg(getApiError(err, 'Erreur lors de la création du projet')),
   });
 

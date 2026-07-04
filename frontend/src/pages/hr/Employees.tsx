@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Users, Loader2, AlertCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { hrService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
@@ -71,6 +72,7 @@ export default function EmployeesPage() {
       setShowForm(false);
       setErrorMsg('');
       reset();
+      toast.success('Employé enregistré');
     },
     onError: (err: unknown) => {
       setErrorMsg(getApiError(err, 'Erreur lors de l\'enregistrement'));

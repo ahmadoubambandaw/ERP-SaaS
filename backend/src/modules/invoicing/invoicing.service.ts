@@ -142,7 +142,13 @@ export class InvoicingService {
   async getInvoice(orgId: string, id: string) {
     const inv = await prisma.invoice.findFirst({
       where: { id, organizationId: orgId },
-      include: { customer: true, lines: { include: { product: true }, orderBy: { sortOrder: 'asc' } }, payments: true, createdBy: { select: { firstName: true, lastName: true } } },
+      include: {
+        customer: true,
+        lines: { include: { product: true }, orderBy: { sortOrder: 'asc' } },
+        payments: true,
+        createdBy: { select: { firstName: true, lastName: true } },
+        organization: { select: { name: true, address: true, phone: true, email: true, taxId: true, currency: true, country: true } },
+      },
     });
     if (!inv) throw new AppError('Facture introuvable', 404);
     return inv;

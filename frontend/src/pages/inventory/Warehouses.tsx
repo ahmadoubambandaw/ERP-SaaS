@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Warehouse, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { inventoryService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 
@@ -37,6 +38,7 @@ export default function WarehousesPage() {
   const mutation = useMutation({
     mutationFn: (d: WarehouseFormData) => inventoryService.createWarehouse(d),
     onSuccess: () => {
+      toast.success('Entrepôt créé');
       qc.invalidateQueries({ queryKey: ['warehouses'] });
       setShowForm(false);
       setErrorMsg('');
