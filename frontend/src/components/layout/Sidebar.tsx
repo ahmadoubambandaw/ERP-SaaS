@@ -109,7 +109,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
               </div>
             )}
             <div>
-              <p className="text-sm font-bold leading-none">{organization?.name || 'ERP SaaS'}</p>
+              <p className="text-sm font-bold leading-none">{organization?.name || 'Naatal'}</p>
               <p className="text-xs text-gray-400">{organization?.currency}</p>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
 
       <div className="p-4 border-t border-gray-700">
         {!collapsed && (
-          <p className="text-xs text-gray-500 text-center">ERP SaaS v1.0</p>
+          <p className="text-xs text-gray-500 text-center">Naatal · by Ndaw-Tech</p>
         )}
       </div>
     </>
