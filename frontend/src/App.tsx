@@ -22,27 +22,33 @@ import WarehousesPage from './pages/inventory/Warehouses';
 import LeavesPage from './pages/hr/Leaves';
 import SuppliersPage from './pages/purchasing/Suppliers';
 import PurchaseOrdersPage from './pages/purchasing/PurchaseOrders';
+import LandingPage from './pages/public/Landing';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
+// Landing page for visitors, dashboard for logged-in users
+function HomeGate() {
+  const { isAuthenticated } = useAuthStore();
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<HomeGate />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route
-          path="/"
           element={
             <PrivateRoute>
               <Layout />
             </PrivateRoute>
           }
         >
-          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
 
           <Route path="invoicing">
