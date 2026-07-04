@@ -166,7 +166,11 @@ export default function SettingsPage() {
         useAuthStore.setState({ organization: { ...current, name: updated.name, logo: updated.logo || undefined } });
       }
     },
-    onError: (err: unknown) => setOrgError(getApiError(err)),
+    onError: (err: unknown) => {
+      const msg = getApiError(err);
+      setOrgError(msg);
+      toast.error(msg);
+    },
   });
 
   const handleLogoFile = (file: File) => {
