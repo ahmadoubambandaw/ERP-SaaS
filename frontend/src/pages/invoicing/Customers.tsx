@@ -1,14 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Users, Loader2, Download } from 'lucide-react';
+import { Plus, Users, Loader2, Download, UploadCloud } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { invoicingService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { exportToCsv } from '../../utils/exportCsv';
+import ImportModal, { ImportColumn } from '../../components/import/ImportModal';
+
+const IMPORT_COLUMNS: ImportColumn[] = [
+  { key: 'name', label: 'Nom', required: true, aliases: ['client', 'nomclient', 'prenom', 'nomcomplet'], example: 'Awa Diop' },
+  { key: 'phone', label: 'Téléphone', aliases: ['tel', 'telephone', 'portable', 'numero', 'contact'], example: '77 123 45 67' },
+  { key: 'email', label: 'Email', aliases: ['mail', 'adresseemail', 'courriel'], example: 'awa@exemple.com' },
+  { key: 'city', label: 'Ville', aliases: ['adresse', 'quartier', 'localite'], example: 'Dakar' },
+  { key: 'taxId', label: 'NINEA/NIF', aliases: ['ninea', 'nif'], example: '' },
+  { key: 'type', label: 'Type', aliases: ['categorie'], example: 'Particulier' },
+];
 
 export default function CustomersPage() {
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
   const { register, handleSubmit, reset } = useForm();
@@ -36,11 +47,36 @@ export default function CustomersPage() {
               <Download className="w-4 h-4" /> Exporter
             </button>
           )}
+          <button onClick={() => setShowImport(true)} className="btn-secondary flex items-center gap-2">
+            <UploadCloud className="w-4 h-4" /> Importer
+          </button>
           <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> Nouveau client
           </button>
         </div>
       </div>
+
+      {showImport && (
+        <ImportModal
+          title="Importer des clients"
+          description="Récupérez votre liste de clients depuis Excel, Word ou votre cahier — plus besoin de tout retaper."
+          templateName="clients"
+          columns={IMPORT_COLUMNS}
+          toPayload={(row) => {
+            if (!row.name) return 'Le nom du client est obligatoire';
+            const type = /partic|individ/i.test(row.type) ? 'INDIVIDUAL' : 'COMPANY';
+            const payload: Record<string, unknown> = { name: row.name, type };
+            if (row.phone) payload.phone = row.phone;
+            if (row.email) payload.email = row.email;
+            if (row.city) payload.city = row.city;
+            if (row.taxId) payload.taxId = row.taxId;
+            return payload;
+          }}
+          onRow={(payload) => invoicingService.createCustomer(payload)}
+          onDone={(n) => { qc.invalidateQueries({ queryKey: ['customers'] }); toast.success(`${n} client(s) importé(s)`); }}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {showForm && (
         <div className="card p-6">

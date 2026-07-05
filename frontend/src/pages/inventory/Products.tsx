@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, AlertTriangle, Loader2, Download } from 'lucide-react';
+import { Plus, Package, AlertTriangle, Loader2, Download, UploadCloud } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -8,11 +8,30 @@ import { getApiError } from '../../utils/apiError';
 import { exportToCsv } from '../../utils/exportCsv';
 import { formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
+import ImportModal, { ImportColumn } from '../../components/import/ImportModal';
+import { parseNumberFr } from '../../utils/importParse';
+
+const IMPORT_COLUMNS: ImportColumn[] = [
+  { key: 'name', label: 'Nom du produit', required: true, aliases: ['produit', 'article', 'designation', 'libelle'], example: 'Riz parfumé 25kg' },
+  { key: 'code', label: 'Code', aliases: ['reference', 'ref', 'sku', 'codeproduit'], example: 'RIZ-25' },
+  { key: 'category', label: 'Catégorie', aliases: ['famille', 'rayon'], example: 'Alimentation' },
+  { key: 'costPrice', label: 'Prix d\'achat', aliases: ['prixachat', 'achat', 'cout', 'pa'], example: '12 500' },
+  { key: 'salePrice', label: 'Prix de vente', aliases: ['prixvente', 'vente', 'prix', 'pv', 'prixunitaire'], example: '14 000' },
+  { key: 'reorderLevel', label: 'Seuil d\'alerte stock', aliases: ['seuil', 'stockmin', 'minimum'], example: '5' },
+  { key: 'unitOfMeasure', label: 'Unité', aliases: ['unite', 'mesure'], example: 'pcs' },
+];
+
+// Code produit généré quand la colonne est absente (cahiers sans références)
+function autoCode(name: string): string {
+  const base = name.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 6) || 'ART';
+  return `${base}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+}
 
 export default function ProductsPage() {
   const { organization } = useAuthStore();
   const currency = organization?.currency || 'XOF';
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
   const { register, handleSubmit, reset } = useForm();
@@ -59,11 +78,42 @@ export default function ProductsPage() {
               <Download className="w-4 h-4" /> Exporter
             </button>
           )}
+          <button onClick={() => setShowImport(true)} className="btn-secondary flex items-center gap-2">
+            <UploadCloud className="w-4 h-4" /> Importer
+          </button>
           <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> Nouveau produit
           </button>
         </div>
       </div>
+
+      {showImport && (
+        <ImportModal
+          title="Importer des produits"
+          description="Récupérez votre catalogue depuis Excel, Word ou votre cahier. Si vos produits n'ont pas de code, Naatal en génère un automatiquement."
+          templateName="produits"
+          columns={IMPORT_COLUMNS}
+          toPayload={(row) => {
+            if (!row.name) return 'Le nom du produit est obligatoire';
+            const payload: Record<string, unknown> = {
+              name: row.name,
+              code: row.code || autoCode(row.name),
+              unitOfMeasure: row.unitOfMeasure || 'pcs',
+            };
+            if (row.category) payload.category = row.category;
+            const cost = parseNumberFr(row.costPrice);
+            const sale = parseNumberFr(row.salePrice);
+            const reorder = parseNumberFr(row.reorderLevel);
+            if (cost !== undefined) payload.costPrice = cost;
+            if (sale !== undefined) payload.salePrice = sale;
+            if (reorder !== undefined) payload.reorderLevel = reorder;
+            return payload;
+          }}
+          onRow={(payload) => inventoryService.createProduct(payload)}
+          onDone={(n) => { qc.invalidateQueries({ queryKey: ['products'] }); toast.success(`${n} produit(s) importé(s)`); }}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {lowStock.length > 0 && (
         <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
