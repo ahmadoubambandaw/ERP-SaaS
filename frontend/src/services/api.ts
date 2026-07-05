@@ -146,6 +146,8 @@ export const subscriptionService = {
   me: () => api.get('/subscription'),
   organizations: () => api.get('/subscription/organizations'),
   platformStats: () => api.get('/subscription/platform-stats'),
+  organizationDetails: (id: string) => api.get(`/subscription/organizations/${id}/details`),
+  runReminders: () => api.post('/subscription/run-reminders'),
   updateOrganization: (id: string, data: unknown) => api.patch(`/subscription/organizations/${id}`, data),
 };
 

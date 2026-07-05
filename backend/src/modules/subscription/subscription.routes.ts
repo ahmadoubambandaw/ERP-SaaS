@@ -13,5 +13,7 @@ subscriptionRouter.get('/', ctrl.getMine);
 
 // Platform administration (cross-tenant)
 subscriptionRouter.get('/platform-stats', authorize('SUPER_ADMIN'), ctrl.platformStats);
+subscriptionRouter.post('/run-reminders', authorize('SUPER_ADMIN'), ctrl.runReminders);
 subscriptionRouter.get('/organizations', authorize('SUPER_ADMIN'), ctrl.listOrganizations);
+subscriptionRouter.get('/organizations/:id/details', authorize('SUPER_ADMIN'), ctrl.organizationDetails);
 subscriptionRouter.patch('/organizations/:id', authorize('SUPER_ADMIN'), ctrl.updateOrganization);

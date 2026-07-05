@@ -3,7 +3,11 @@ import { AppError } from '../../middleware/error.middleware';
 import { clearSubscriptionCache } from '../../middleware/subscription.middleware';
 import { clearPlanCache } from '../../middleware/plan.middleware';
 import { PLAN_MODULES, PLAN_PRICE_XOF, planUserLimit } from '../../config/plans';
+import { sendEmail, naatalEmailShell, isEmailConfigured } from '../../utils/email';
 import { z } from 'zod';
+
+// Emails de relance envoyés à ces seuils de jours restants avant expiration
+const REMINDER_DAYS = [3, 1];
 
 const REFERRAL_REWARD_MONTHS = 1;
 
@@ -119,6 +123,12 @@ export class SubscriptionService {
     const payingActive = activeOrgs.filter((o) => payingIds.has(o.id));
     const trialsActive = activeOrgs.filter((o) => !payingIds.has(o.id));
 
+    // Taux de conversion : clients ayant déjà payé / total des clients
+    const everPaidClients = clientOrgs.filter((o) => payingIds.has(o.id)).length;
+    const conversionRate = clientOrgs.length
+      ? Math.round((everPaidClients / clientOrgs.length) * 100)
+      : 0;
+
     // Revenus
     const revenueTotal = completedPayments.reduce((s, p) => s + num(p.amount), 0);
     const revenueThisMonth = completedPayments
@@ -164,6 +174,8 @@ export class SubscriptionService {
       expiredClients: expiredOrgs.length,
       payingClients: payingActive.length,
       trialClients: trialsActive.length,
+      everPaidClients,
+      conversionRate,
       newThisMonth,
       revenueTotal,
       revenueThisMonth,
@@ -182,6 +194,111 @@ export class SubscriptionService {
         paidAt: p.paidAt,
       })),
     };
+  }
+
+  // Fiche client détaillée (SUPER_ADMIN) : abonnement, paiements, factures, équipe
+  async getOrganizationDetails(id: string) {
+    const org = await prisma.organization.findUnique({
+      where: { id },
+      select: {
+        id: true, name: true, slug: true, country: true, currency: true,
+        plan: true, planExpiresAt: true, createdAt: true, email: true, phone: true,
+        referralCode: true, referredById: true,
+      },
+    });
+    if (!org) throw new AppError('Organisation introuvable', 404);
+
+    const [payments, users, invoiceAgg, invoiceCount, referredBy] = await Promise.all([
+      prisma.subscriptionPayment.findMany({
+        where: { organizationId: id },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: { id: true, plan: true, months: true, amount: true, currency: true, status: true, createdAt: true, paidAt: true },
+      }),
+      prisma.user.findMany({
+        where: { organizationId: id },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, firstName: true, lastName: true, email: true, role: true },
+      }),
+      prisma.invoice.aggregate({ where: { organizationId: id }, _sum: { total: true } }),
+      prisma.invoice.count({ where: { organizationId: id } }),
+      org.referredById
+        ? prisma.organization.findUnique({ where: { id: org.referredById }, select: { name: true } })
+        : Promise.resolve(null),
+    ]);
+
+    const num = (v: unknown) => Number(v ?? 0);
+    const totalPaid = payments
+      .filter((p) => p.status === 'COMPLETED')
+      .reduce((s, p) => s + num(p.amount), 0);
+
+    return {
+      ...org,
+      referredByName: referredBy?.name || null,
+      totalPaid,
+      invoiceCount,
+      invoiceTotal: num(invoiceAgg._sum.total),
+      users,
+      payments: payments.map((p) => ({ ...p, amount: num(p.amount) })),
+    };
+  }
+
+  // Relances par email des abonnements qui expirent bientôt (J-3, J-1)
+  async runExpiryReminders() {
+    if (!isEmailConfigured()) {
+      return { configured: false, sent: 0, details: [] as { org: string; to: string; daysLeft: number }[] };
+    }
+
+    const now = Date.now();
+    const maxDays = Math.max(...REMINDER_DAYS);
+    const horizon = new Date(now + (maxDays + 1) * 24 * 60 * 60 * 1000);
+
+    const orgs = await prisma.organization.findMany({
+      where: { planExpiresAt: { not: null, gt: new Date(now), lte: horizon } },
+      select: {
+        id: true, name: true, plan: true, planExpiresAt: true,
+        users: {
+          where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+          orderBy: { createdAt: 'asc' },
+          take: 1,
+          select: { email: true, firstName: true },
+        },
+      },
+    });
+
+    const details: { org: string; to: string; daysLeft: number }[] = [];
+    for (const org of orgs) {
+      const daysLeft = Math.ceil((org.planExpiresAt!.getTime() - now) / (24 * 60 * 60 * 1000));
+      if (!REMINDER_DAYS.includes(daysLeft)) continue;
+      const recipient = org.users[0];
+      if (!recipient?.email) continue;
+
+      const price = PLAN_PRICE_XOF[org.plan];
+      const priceLine = price ? `${price.toLocaleString('fr-FR')} F CFA / mois` : '';
+      const html = naatalEmailShell(
+        `<p>Bonjour ${recipient.firstName || ''},</p>
+         <p>L'abonnement <strong>${org.plan}</strong> de <strong>${org.name}</strong> expire dans
+         <strong>${daysLeft} jour${daysLeft > 1 ? 's' : ''}</strong>.</p>
+         <p>Pour continuer à utiliser Naatal sans interruption, renouvelez dès maintenant${priceLine ? ` (${priceLine})` : ''} :</p>
+         <p style="text-align:center;margin:24px 0">
+           <a href="${process.env.FRONTEND_URL || 'https://erp-saa-s.vercel.app'}/settings"
+              style="background:#2563eb;color:#fff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:bold;display:inline-block">
+             Renouveler mon abonnement
+           </a>
+         </p>
+         <p style="color:#6b7280;font-size:13px">Vos données restent en sécurité — vous reprendrez exactement où vous en étiez.</p>`,
+        'Naatal · Ndaw-Tech',
+      );
+
+      const ok = await sendEmail({
+        to: recipient.email,
+        subject: `⏰ Votre abonnement Naatal expire dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`,
+        html,
+      });
+      if (ok) details.push({ org: org.name, to: recipient.email, daysLeft });
+    }
+
+    return { configured: true, sent: details.length, details };
   }
 
   // Crédite le parrain d'un mois offert lors de la 1re prolongation payante du filleul
