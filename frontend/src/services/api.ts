@@ -109,6 +109,8 @@ export const invoicingService = {
 
 export const inventoryService = {
   products: () => api.get('/inventory/products'),
+  categories: () => api.get('/inventory/categories'),
+  setCategoryImage: (name: string, image: string | null) => api.put('/inventory/categories/image', { name, image }),
   createProduct: (data: unknown) => api.post('/inventory/products', data),
   updateProduct: (id: string, data: unknown) => api.patch(`/inventory/products/${id}`, data),
   warehouses: () => api.get('/inventory/warehouses'),

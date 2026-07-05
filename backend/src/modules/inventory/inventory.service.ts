@@ -51,6 +51,46 @@ export class InventoryService {
     return prisma.product.create({ data: { ...data, organizationId: orgId } });
   }
 
+  // ===== Groupes de produits (catégories avec photo) =====
+
+  /** Catégories dérivées des produits, fusionnées avec leurs photos enregistrées. */
+  async listCategories(orgId: string) {
+    const [grouped, saved] = await Promise.all([
+      prisma.product.groupBy({
+        by: ['category'],
+        where: { organizationId: orgId, category: { not: null } },
+        _count: { _all: true },
+      }),
+      prisma.productCategory.findMany({ where: { organizationId: orgId } }),
+    ]);
+
+    const images = new Map(saved.map((c) => [c.name.toLowerCase(), c.image]));
+    const counts = new Map<string, number>();
+    grouped.forEach((g) => {
+      if (g.category) counts.set(g.category, g._count._all);
+    });
+    // Les catégories avec photo mais sans produit restent visibles
+    saved.forEach((c) => { if (!counts.has(c.name)) counts.set(c.name, 0); });
+
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count, image: images.get(name.toLowerCase()) || null }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+  }
+
+  /** Enregistre (ou remplace) la photo de représentation d'un groupe de produits. */
+  async setCategoryImage(orgId: string, body: unknown) {
+    const data = z.object({
+      name: z.string().min(1).max(80),
+      image: z.string().max(500_000).nullable(), // data URL (photo compressée côté client)
+    }).parse(body);
+
+    return prisma.productCategory.upsert({
+      where: { organizationId_name: { organizationId: orgId, name: data.name } },
+      update: { image: data.image },
+      create: { organizationId: orgId, name: data.name, image: data.image },
+    });
+  }
+
   async getProduct(orgId: string, id: string) {
     const p = await prisma.product.findFirst({
       where: { id, organizationId: orgId },

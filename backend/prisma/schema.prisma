@@ -11,42 +11,43 @@ datasource db {
 // ==================== TENANTS & AUTH ====================
 
 model Organization {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  country     String   @default("SN")
-  currency    String   @default("XOF")
-  language    String   @default("fr")
-  plan          Plan      @default(STARTER)
-  planExpiresAt DateTime?
-  referralCode     String?  @unique
+  id               String    @id @default(cuid())
+  name             String
+  slug             String    @unique
+  country          String    @default("SN")
+  currency         String    @default("XOF")
+  language         String    @default("fr")
+  plan             Plan      @default(STARTER)
+  planExpiresAt    DateTime?
+  referralCode     String?   @unique
   referredById     String?
-  referralRewarded Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  logo        String?
-  address     String?
-  phone       String?
-  email       String?
-  taxId       String?
-  fiscalYear  Int      @default(1)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  referralRewarded Boolean   @default(false)
+  isActive         Boolean   @default(true)
+  logo             String?
+  address          String?
+  phone            String?
+  email            String?
+  taxId            String?
+  fiscalYear       Int       @default(1)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  users           User[]
-  accounts        Account[]
-  journals        Journal[]
-  journalEntries  JournalEntry[]
-  invoices        Invoice[]
-  customers       Customer[]
-  suppliers       Supplier[]
-  products        Product[]
-  warehouses      Warehouse[]
-  employees       Employee[]
-  projects        Project[]
-  leads           Lead[]
-  opportunities   Opportunity[]
-  purchaseOrders  PurchaseOrder[]
+  users                User[]
+  accounts             Account[]
+  journals             Journal[]
+  journalEntries       JournalEntry[]
+  invoices             Invoice[]
+  customers            Customer[]
+  suppliers            Supplier[]
+  products             Product[]
+  warehouses           Warehouse[]
+  employees            Employee[]
+  projects             Project[]
+  leads                Lead[]
+  opportunities        Opportunity[]
+  purchaseOrders       PurchaseOrder[]
   subscriptionPayments SubscriptionPayment[]
+  productCategories    ProductCategory[]
 
   @@index([slug])
 }
@@ -71,10 +72,10 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  organization    Organization  @relation(fields: [organizationId], references: [id])
+  organization    Organization   @relation(fields: [organizationId], references: [id])
   refreshTokens   RefreshToken[]
-  createdInvoices Invoice[]     @relation("InvoiceCreatedBy")
-  assignedTasks   Task[]        @relation("TaskAssignee")
+  createdInvoices Invoice[]      @relation("InvoiceCreatedBy")
+  assignedTasks   Task[]         @relation("TaskAssignee")
 
   @@unique([organizationId, email])
   @@index([organizationId])
@@ -139,7 +140,7 @@ model Journal {
   type           JournalType
   createdAt      DateTime    @default(now())
 
-  organization Organization  @relation(fields: [organizationId], references: [id])
+  organization Organization   @relation(fields: [organizationId], references: [id])
   entries      JournalEntry[]
 
   @@unique([organizationId, code])
@@ -182,13 +183,13 @@ enum EntryStatus {
 }
 
 model JournalLine {
-  id              String   @id @default(cuid())
+  id              String  @id @default(cuid())
   entryId         String
   debitAccountId  String?
   creditAccountId String?
   description     String?
-  debit           Decimal  @default(0) @db.Decimal(15, 2)
-  credit          Decimal  @default(0) @db.Decimal(15, 2)
+  debit           Decimal @default(0) @db.Decimal(15, 2)
+  credit          Decimal @default(0) @db.Decimal(15, 2)
 
   entry         JournalEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
   debitAccount  Account?     @relation("DebitAccount", fields: [debitAccountId], references: [id])
@@ -249,25 +250,25 @@ model Supplier {
 }
 
 model Invoice {
-  id             String        @id @default(cuid())
+  id             String         @id @default(cuid())
   organizationId String
   customerId     String
   createdById    String
   number         String
-  type           InvoiceType   @default(INVOICE)
-  status         InvoiceStatus @default(DRAFT)
+  type           InvoiceType    @default(INVOICE)
+  status         InvoiceStatus  @default(DRAFT)
   issueDate      DateTime
   dueDate        DateTime
-  currency       String        @default("XOF")
-  subtotal       Decimal       @db.Decimal(15, 2)
-  taxAmount      Decimal       @default(0) @db.Decimal(15, 2)
-  total          Decimal       @db.Decimal(15, 2)
-  paidAmount     Decimal       @default(0) @db.Decimal(15, 2)
+  currency       String         @default("XOF")
+  subtotal       Decimal        @db.Decimal(15, 2)
+  taxAmount      Decimal        @default(0) @db.Decimal(15, 2)
+  total          Decimal        @db.Decimal(15, 2)
+  paidAmount     Decimal        @default(0) @db.Decimal(15, 2)
   notes          String?
   terms          String?
   paymentMethod  PaymentMethod?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   organization Organization  @relation(fields: [organizationId], references: [id])
   customer     Customer      @relation(fields: [customerId], references: [id])
@@ -308,15 +309,15 @@ enum PaymentMethod {
 }
 
 model InvoiceLine {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   invoiceId   String
   productId   String?
   description String
-  quantity    Decimal  @db.Decimal(10, 3)
-  unitPrice   Decimal  @db.Decimal(15, 2)
-  taxRate     Decimal  @default(0) @db.Decimal(5, 2)
-  total       Decimal  @db.Decimal(15, 2)
-  sortOrder   Int      @default(0)
+  quantity    Decimal @db.Decimal(10, 3)
+  unitPrice   Decimal @db.Decimal(15, 2)
+  taxRate     Decimal @default(0) @db.Decimal(5, 2)
+  total       Decimal @db.Decimal(15, 2)
+  sortOrder   Int     @default(0)
 
   invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id])
@@ -379,11 +380,11 @@ model Warehouse {
 }
 
 model StockLevel {
-  id          String    @id @default(cuid())
+  id          String   @id @default(cuid())
   productId   String
   warehouseId String
-  quantity    Decimal   @default(0) @db.Decimal(10, 3)
-  updatedAt   DateTime  @updatedAt
+  quantity    Decimal  @default(0) @db.Decimal(10, 3)
+  updatedAt   DateTime @updatedAt
 
   product   Product   @relation(fields: [productId], references: [id])
   warehouse Warehouse @relation(fields: [warehouseId], references: [id])
@@ -417,20 +418,20 @@ enum MovementType {
 }
 
 model PurchaseOrder {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   organizationId String
   supplierId     String
   number         String
-  status         POStatus @default(DRAFT)
+  status         POStatus  @default(DRAFT)
   orderDate      DateTime
   expectedDate   DateTime?
-  total          Decimal  @db.Decimal(15, 2)
+  total          Decimal   @db.Decimal(15, 2)
   notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  organization Organization       @relation(fields: [organizationId], references: [id])
-  supplier     Supplier           @relation(fields: [supplierId], references: [id])
+  organization Organization        @relation(fields: [organizationId], references: [id])
+  supplier     Supplier            @relation(fields: [supplierId], references: [id])
   lines        PurchaseOrderLine[]
 
   @@index([organizationId])
@@ -507,19 +508,19 @@ enum EmploymentType {
 }
 
 model Payslip {
-  id             String        @id @default(cuid())
+  id             String         @id @default(cuid())
   employeeId     String
   period         String
-  baseSalary     Decimal       @db.Decimal(15, 2)
-  allowances     Decimal       @default(0) @db.Decimal(15, 2)
-  deductions     Decimal       @default(0) @db.Decimal(15, 2)
-  socialSecurity Decimal       @default(0) @db.Decimal(15, 2)
-  incomeTax      Decimal       @default(0) @db.Decimal(15, 2)
-  netSalary      Decimal       @db.Decimal(15, 2)
+  baseSalary     Decimal        @db.Decimal(15, 2)
+  allowances     Decimal        @default(0) @db.Decimal(15, 2)
+  deductions     Decimal        @default(0) @db.Decimal(15, 2)
+  socialSecurity Decimal        @default(0) @db.Decimal(15, 2)
+  incomeTax      Decimal        @default(0) @db.Decimal(15, 2)
+  netSalary      Decimal        @db.Decimal(15, 2)
   paymentDate    DateTime?
   paymentMethod  PaymentMethod?
-  status         PayslipStatus @default(DRAFT)
-  createdAt      DateTime      @default(now())
+  status         PayslipStatus  @default(DRAFT)
+  createdAt      DateTime       @default(now())
 
   employee Employee @relation(fields: [employeeId], references: [id])
 }
@@ -766,4 +767,16 @@ model SubscriptionPayment {
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
+}
+
+model ProductCategory {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  image          String?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
 }
