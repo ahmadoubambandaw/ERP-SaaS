@@ -158,6 +158,12 @@ export const billingService = {
   verify: () => api.post('/billing/verify'),
 };
 
+export const demoService = {
+  status: () => api.get('/demo'),
+  seed: () => api.post('/demo/seed'),
+  clear: () => api.delete('/demo/clear'),
+};
+
 export const usersService = {
   list: () => api.get('/users'),
   create: (data: unknown) => api.post('/users', data),
