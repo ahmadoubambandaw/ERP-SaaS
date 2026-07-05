@@ -177,6 +177,24 @@ export default function LandingPage() {
             <span className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400" /> Devise XOF, XAF, GNF...</span>
             <span className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400" /> Installation mobile en 1 clic</span>
           </div>
+
+          {/* ===== Aperçu de l'app (téléphone + web) ===== */}
+          <div className="relative mt-16 flex items-end justify-center">
+            {/* Écran ordinateur (derrière, masqué sur très petit écran) */}
+            <div className="hidden sm:block w-[62%] max-w-[560px] -mr-8 md:-mr-16 mb-6">
+              <div className="rounded-t-xl border-[10px] border-b-[14px] border-gray-700 bg-gray-700 overflow-hidden shadow-2xl">
+                <img src="/screenshots/app-web.png" alt="Naatal sur ordinateur" className="w-full block" loading="lazy" />
+              </div>
+              <div className="h-3 bg-gradient-to-b from-gray-400 to-gray-600 rounded-b-lg mx-[-6px]" />
+            </div>
+
+            {/* Téléphone (devant) */}
+            <div className="relative z-10 w-[210px] sm:w-[240px] border-[8px] border-gray-900 rounded-[2.2rem] overflow-hidden shadow-2xl bg-white">
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 w-20 h-5 bg-gray-900 rounded-full z-10" />
+              <img src="/screenshots/app-mobile.png" alt="Naatal sur téléphone" className="w-full block" loading="lazy" />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mt-4">Application mobile & version web — vos données synchronisées partout</p>
         </div>
       </section>
 
