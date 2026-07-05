@@ -3,6 +3,7 @@ import { BarChart2, FileText, Package, Users, TrendingUp, AlertTriangle, Clock, 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { dashboardService } from '../../services/api';
 import KpiCard from '../../components/ui/KpiCard';
+import QuickActions from '../../components/ui/QuickActions';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import StatusBadge from '../../components/ui/StatusBadge';
@@ -25,6 +26,9 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
         <p className="text-gray-500 text-sm mt-1">Vue d'ensemble de votre activite</p>
       </div>
+
+      {/* Accès rapide en gros boutons (pensé pour une prise en main facile) */}
+      <QuickActions />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard
