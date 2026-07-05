@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone, Palette, Check, Gift } from 'lucide-react';
+import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone, Palette, Check, Gift, Sparkles } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { usersService, organizationService, authService, subscriptionService } from '../../services/api';
+import { usersService, organizationService, authService, subscriptionService, demoService } from '../../services/api';
 import ConfirmDialog from '../../components/ui/ConfirmDialog';
 import { getApiError } from '../../utils/apiError';
 import { useAuthStore } from '../../store/auth.store';
@@ -67,6 +67,31 @@ export default function SettingsPage() {
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<UserFormData>({
     defaultValues: { role: 'EMPLOYEE' },
+  });
+
+  // ===== Données de démonstration =====
+  const { data: demoData } = useQuery({
+    queryKey: ['demo-status'],
+    queryFn: () => demoService.status(),
+    enabled: isAdmin,
+  });
+  const demoLoaded = Boolean(demoData?.data?.data?.loaded);
+
+  const invalidateAll = () => {
+    ['dashboard-kpis', 'dashboard-chart', 'dashboard-invoices', 'alerts', 'products',
+      'product-categories', 'low-stock', 'customers', 'employees', 'leads', 'invoices', 'demo-status']
+      .forEach((k) => qc.invalidateQueries({ queryKey: [k] }));
+  };
+
+  const seedMutation = useMutation({
+    mutationFn: () => demoService.seed(),
+    onSuccess: () => { invalidateAll(); toast.success('Données de démonstration chargées 🎉'); },
+    onError: (err: unknown) => toast.error(getApiError(err, 'Échec du chargement')),
+  });
+  const clearDemoMutation = useMutation({
+    mutationFn: () => demoService.clear(),
+    onSuccess: () => { invalidateAll(); toast.success('Données de démonstration supprimées'); },
+    onError: (err: unknown) => toast.error(getApiError(err, 'Échec de la suppression')),
   });
 
   const { data, isLoading } = useQuery({
@@ -231,6 +256,52 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
+
+      {/* ===== Données de démonstration ===== */}
+      {isAdmin && (
+        <div className="card p-6 border border-primary-100 bg-gradient-to-br from-primary-50/60 to-transparent">
+          <div className="flex items-center gap-3 mb-2">
+            <Sparkles className="w-5 h-5 text-primary-600" />
+            <h2 className="font-semibold text-gray-900">Données de démonstration</h2>
+          </div>
+          <p className="text-sm text-gray-500 mb-4">
+            Remplissez votre compte en un clic avec des clients, produits, factures, employés et
+            prospects réalistes — idéal pour tester l'application et voir un tableau de bord vivant,
+            sans tout saisir à la main.
+          </p>
+          {demoLoaded ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="badge badge-green flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> Données de démo chargées
+              </span>
+              <button
+                onClick={() => {
+                  if (window.confirm('Supprimer toutes les données de démonstration ? Vos vraies données ne sont pas touchées.')) {
+                    clearDemoMutation.mutate();
+                  }
+                }}
+                disabled={clearDemoMutation.isPending}
+                className="btn-secondary flex items-center gap-2 text-red-600 hover:bg-red-50"
+              >
+                {clearDemoMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                Supprimer les données de démo
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => seedMutation.mutate()}
+              disabled={seedMutation.isPending}
+              className="btn-primary flex items-center gap-2"
+            >
+              {seedMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {seedMutation.isPending ? 'Chargement en cours…' : 'Charger des données de démonstration'}
+            </button>
+          )}
+          <p className="text-xs text-gray-400 mt-3">
+            💡 Astuce : chargez la démo pour explorer, puis supprimez-la avant de saisir vos vraies données.
+          </p>
+        </div>
+      )}
 
       {/* ===== Apparence ===== */}
       <div className="card p-6">
