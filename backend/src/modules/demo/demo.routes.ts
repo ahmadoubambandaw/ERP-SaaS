@@ -6,9 +6,10 @@ import { tenantMiddleware } from '../../middleware/tenant.middleware';
 export const demoRouter = Router();
 const ctrl = new DemoController();
 
-// Pas de subscriptionGuard : utilisable pendant l'essai gratuit
-demoRouter.use(authenticate, tenantMiddleware);
+// Réservé au propriétaire de la plateforme (fonctionnalité de test uniquement).
+// Pas de subscriptionGuard : utilisable pendant l'essai gratuit.
+demoRouter.use(authenticate, tenantMiddleware, authorize('SUPER_ADMIN'));
 
 demoRouter.get('/', ctrl.status);
-demoRouter.post('/seed', authorize('ADMIN'), ctrl.seed);
-demoRouter.delete('/clear', authorize('ADMIN'), ctrl.clear);
+demoRouter.post('/seed', ctrl.seed);
+demoRouter.delete('/clear', ctrl.clear);
