@@ -69,11 +69,12 @@ export default function SettingsPage() {
     defaultValues: { role: 'EMPLOYEE' },
   });
 
-  // ===== Données de démonstration =====
+  // ===== Données de démonstration (réservé au propriétaire de la plateforme) =====
+  const isPlatformOwner = user?.role === 'SUPER_ADMIN';
   const { data: demoData } = useQuery({
     queryKey: ['demo-status'],
     queryFn: () => demoService.status(),
-    enabled: isAdmin,
+    enabled: isPlatformOwner,
   });
   const demoLoaded = Boolean(demoData?.data?.data?.loaded);
 
@@ -258,7 +259,7 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
 
       {/* ===== Données de démonstration ===== */}
-      {isAdmin && (
+      {isPlatformOwner && (
         <div className="card p-6 border border-primary-100 bg-gradient-to-br from-primary-50/60 to-transparent">
           <div className="flex items-center gap-3 mb-2">
             <Sparkles className="w-5 h-5 text-primary-600" />
