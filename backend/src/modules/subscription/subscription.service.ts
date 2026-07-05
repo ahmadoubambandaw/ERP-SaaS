@@ -2,7 +2,7 @@ import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { clearSubscriptionCache } from '../../middleware/subscription.middleware';
 import { clearPlanCache } from '../../middleware/plan.middleware';
-import { PLAN_MODULES, planUserLimit } from '../../config/plans';
+import { PLAN_MODULES, PLAN_PRICE_XOF, planUserLimit } from '../../config/plans';
 import { z } from 'zod';
 
 const REFERRAL_REWARD_MONTHS = 1;
@@ -80,6 +80,86 @@ export class SubscriptionService {
     });
   }
 
+  // Tableau de bord du fondateur : revenus, MRR, croissance, activité
+  async platformStats() {
+    const now = Date.now();
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [orgs, completedPayments, recentPayments, referralsTotal] = await Promise.all([
+      prisma.organization.findMany({
+        select: { id: true, plan: true, planExpiresAt: true, createdAt: true },
+      }),
+      prisma.subscriptionPayment.findMany({
+        where: { status: 'COMPLETED' },
+        select: { organizationId: true, amount: true, paidAt: true },
+      }),
+      prisma.subscriptionPayment.findMany({
+        where: { status: 'COMPLETED' },
+        orderBy: { paidAt: 'desc' },
+        take: 8,
+        select: {
+          id: true, amount: true, currency: true, plan: true, months: true, paidAt: true,
+          organization: { select: { name: true } },
+        },
+      }),
+      prisma.organization.count({ where: { referralRewarded: true } }),
+    ]);
+
+    const num = (v: unknown) => Number(v ?? 0);
+
+    // Comptes clients (on exclut les organisations en accès illimité = comptes internes)
+    const clientOrgs = orgs.filter((o) => o.planExpiresAt !== null);
+    const activeOrgs = clientOrgs.filter((o) => o.planExpiresAt!.getTime() >= now);
+    const expiredOrgs = clientOrgs.filter((o) => o.planExpiresAt!.getTime() < now);
+
+    // Organisations ayant au moins un paiement réel = clients payants
+    const payingIds = new Set(completedPayments.map((p) => p.organizationId));
+    const payingActive = activeOrgs.filter((o) => payingIds.has(o.id));
+    const trialsActive = activeOrgs.filter((o) => !payingIds.has(o.id));
+
+    // Revenus
+    const revenueTotal = completedPayments.reduce((s, p) => s + num(p.amount), 0);
+    const revenueThisMonth = completedPayments
+      .filter((p) => p.paidAt && p.paidAt >= startOfMonth)
+      .reduce((s, p) => s + num(p.amount), 0);
+
+    // MRR estimé : somme du prix mensuel des clients payants actuellement actifs
+    const mrr = payingActive.reduce((s, o) => s + (PLAN_PRICE_XOF[o.plan] || 0), 0);
+
+    // Répartition par formule (clients uniquement)
+    const planDistribution: Record<string, number> = { STARTER: 0, PROFESSIONAL: 0, ENTERPRISE: 0 };
+    clientOrgs.forEach((o) => { planDistribution[o.plan] = (planDistribution[o.plan] || 0) + 1; });
+
+    // Nouveaux comptes ce mois-ci
+    const newThisMonth = orgs.filter((o) => o.createdAt >= startOfMonth).length;
+
+    return {
+      totalClients: clientOrgs.length,
+      activeClients: activeOrgs.length,
+      expiredClients: expiredOrgs.length,
+      payingClients: payingActive.length,
+      trialClients: trialsActive.length,
+      newThisMonth,
+      revenueTotal,
+      revenueThisMonth,
+      mrr,
+      paymentsCount: completedPayments.length,
+      referralsRewarded: referralsTotal,
+      planDistribution,
+      recentPayments: recentPayments.map((p) => ({
+        id: p.id,
+        org: p.organization?.name || '—',
+        amount: num(p.amount),
+        currency: p.currency,
+        plan: p.plan,
+        months: p.months,
+        paidAt: p.paidAt,
+      })),
+    };
+  }
+
   // Crédite le parrain d'un mois offert lors de la 1re prolongation payante du filleul
   private async rewardReferrer(referredOrgId: string): Promise<void> {
     const org = await prisma.organization.findUnique({
@@ -111,6 +191,7 @@ export class SubscriptionService {
       plan: z.enum(['STARTER', 'PROFESSIONAL', 'ENTERPRISE']).optional(),
       months: z.number().int().min(1).max(36).optional(),
       unlimited: z.boolean().optional(),
+      suspend: z.boolean().optional(),
     }).parse(body);
 
     const org = await prisma.organization.findUnique({
@@ -120,7 +201,10 @@ export class SubscriptionService {
     if (!org) throw new AppError('Organisation introuvable', 404);
 
     let planExpiresAt: Date | null | undefined;
-    if (data.unlimited) {
+    if (data.suspend) {
+      // Suspend immediately: set expiry to yesterday
+      planExpiresAt = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    } else if (data.unlimited) {
       planExpiresAt = null;
     } else if (data.months) {
       const base = org.planExpiresAt && org.planExpiresAt.getTime() > Date.now()

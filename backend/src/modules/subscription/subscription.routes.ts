@@ -12,5 +12,6 @@ subscriptionRouter.use(authenticate, tenantMiddleware);
 subscriptionRouter.get('/', ctrl.getMine);
 
 // Platform administration (cross-tenant)
+subscriptionRouter.get('/platform-stats', authorize('SUPER_ADMIN'), ctrl.platformStats);
 subscriptionRouter.get('/organizations', authorize('SUPER_ADMIN'), ctrl.listOrganizations);
 subscriptionRouter.patch('/organizations/:id', authorize('SUPER_ADMIN'), ctrl.updateOrganization);

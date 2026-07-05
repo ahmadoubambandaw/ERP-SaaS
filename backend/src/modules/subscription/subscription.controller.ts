@@ -12,6 +12,9 @@ export class SubscriptionController {
   listOrganizations = async (_req: AuthRequest, res: Response, next: NextFunction) => {
     try { sendSuccess(res, await service.listOrganizations()); } catch (e) { next(e); }
   };
+  platformStats = async (_req: AuthRequest, res: Response, next: NextFunction) => {
+    try { sendSuccess(res, await service.platformStats()); } catch (e) { next(e); }
+  };
   updateOrganization = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { sendSuccess(res, await service.updateOrganization(req.params.id, req.body), 'Abonnement mis a jour'); } catch (e) { next(e); }
   };

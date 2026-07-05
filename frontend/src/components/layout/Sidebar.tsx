@@ -84,7 +84,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   const items: NavItem[] = isSuperAdmin
-    ? [...navItems, { label: 'Plateforme', icon: Shield, to: '/admin' }]
+    ? [...navItems, { label: 'Fondateur', icon: Shield, to: '/admin' }]
     : navItems;
 
   // Un module est verrouillé s'il n'est pas inclus dans la formule (sauf super admin)
