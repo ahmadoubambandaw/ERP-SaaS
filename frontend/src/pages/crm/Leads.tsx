@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, UserPlus, Loader2, X, TrendingUp } from 'lucide-react';
+import { Plus, UserPlus, Loader2, X, TrendingUp, UploadCloud } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -7,6 +7,18 @@ import { crmService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
+import ImportModal, { ImportColumn } from '../../components/import/ImportModal';
+import { parseNumberFr } from '../../utils/importParse';
+
+const IMPORT_COLUMNS: ImportColumn[] = [
+  { key: 'firstName', label: 'Prénom', required: true, aliases: ['prenom', 'nom'], example: 'Awa' },
+  { key: 'lastName', label: 'Nom', required: true, aliases: ['nomdefamille'], example: 'Diop' },
+  { key: 'company', label: 'Boutique / Activité', aliases: ['entreprise', 'boutique', 'activite', 'commerce', 'societe'], example: 'Cosmétiques en gros' },
+  { key: 'phone', label: 'Téléphone', aliases: ['tel', 'telephone', 'portable', 'numero', 'whatsapp', 'contact'], example: '77 000 00 00' },
+  { key: 'email', label: 'Email', aliases: ['mail', 'adresseemail'], example: '' },
+  { key: 'notes', label: 'Notes / Zone', aliases: ['zone', 'quartier', 'marche', 'segment', 'commentaire', 'prochaineaction'], example: 'HLM — message WhatsApp lundi' },
+  { key: 'estimatedValue', label: 'Valeur estimée', aliases: ['valeur', 'montant', 'budget'], example: '' },
+];
 
 const LEAD_STATUSES = [
   { value: 'NEW', label: 'Nouveau' },
@@ -46,6 +58,7 @@ export default function LeadsPage() {
   const { organization } = useAuthStore();
   const currency = organization?.currency || 'XOF';
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [actionError, setActionError] = useState('');
   const qc = useQueryClient();
@@ -89,10 +102,43 @@ export default function LeadsPage() {
           <h1 className="text-2xl font-bold text-gray-900">CRM - Prospects</h1>
           <p className="text-gray-500 text-sm">{leads.length} prospect(s)</p>
         </div>
-        <button onClick={() => { setShowForm(true); setErrorMsg(''); }} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Nouveau prospect
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowImport(true)} className="btn-secondary flex items-center gap-2">
+            <UploadCloud className="w-4 h-4" /> Importer
+          </button>
+          <button onClick={() => { setShowForm(true); setErrorMsg(''); }} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Nouveau prospect
+          </button>
+        </div>
       </div>
+
+      {showImport && (
+        <ImportModal
+          title="Importer des prospects"
+          description="Chargez votre liste de prospection depuis Excel, Word ou un tableau collé — puis suivez chaque prospect jusqu'à la conversion."
+          templateName="prospects"
+          columns={IMPORT_COLUMNS}
+          toPayload={(row) => {
+            if (!row.firstName) return 'Le prénom est obligatoire';
+            const payload: Record<string, unknown> = {
+              firstName: row.firstName,
+              // Nom de famille par défaut si la liste n'a qu'une colonne "nom"
+              lastName: row.lastName || '—',
+              source: 'COLD_CALL',
+            };
+            if (row.company) payload.company = row.company;
+            if (row.phone) payload.phone = row.phone;
+            if (row.email) payload.email = row.email;
+            if (row.notes) payload.notes = row.notes;
+            const val = parseNumberFr(row.estimatedValue);
+            if (val !== undefined) payload.estimatedValue = val;
+            return payload;
+          }}
+          onRow={(payload) => crmService.createLead(payload)}
+          onDone={(n) => { qc.invalidateQueries({ queryKey: ['leads'] }); toast.success(`${n} prospect(s) importé(s)`); }}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {actionError && (
         <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between">
