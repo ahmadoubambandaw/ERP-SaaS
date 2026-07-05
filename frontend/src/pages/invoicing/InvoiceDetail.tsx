@@ -1,11 +1,11 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2, Download, Mail } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2, Download, Mail, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 import { invoicingService } from '../../services/api';
-import { generateInvoicePdf, getInvoicePdfBase64 } from '../../utils/invoicePdf';
+import { generateInvoicePdf, getInvoicePdfBase64, getInvoicePdfBlob } from '../../utils/invoicePdf';
 import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
@@ -143,6 +143,39 @@ export default function InvoiceDetailPage() {
     onError: (err: unknown) => toast.error(getApiError(err)),
   });
 
+  // Envoi WhatsApp : partage natif du PDF (mobile) ou wa.me + téléchargement (ordinateur)
+  const shareOnWhatsApp = async () => {
+    if (!inv) return;
+    const docLabel = TYPE_LABELS[inv.type] || 'Facture';
+    const total = Number(inv.total).toLocaleString('fr-FR');
+    const message =
+      `Bonjour ${inv.customer?.name || ''},\n` +
+      `Voici votre ${docLabel.toLowerCase()} ${inv.number} d'un montant de ${total} ${currency}.\n` +
+      `${organization?.name || ''} — merci de votre confiance ! 🙏`;
+
+    try {
+      const blob = getInvoicePdfBlob(inv, organization?.name);
+      const file = new File([blob], `${inv.number}.pdf`, { type: 'application/pdf' });
+      // Sur mobile : la feuille de partage native permet de joindre le PDF direct dans WhatsApp
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: message, title: inv.number });
+        return;
+      }
+    } catch (e) {
+      if ((e as Error)?.name === 'AbortError') return; // partage annulé par l'utilisateur
+    }
+
+    // Ordinateur (pas de partage de fichier) : on télécharge le PDF et on ouvre WhatsApp avec le message
+    generateInvoicePdf(inv, organization?.name);
+    let phone = (inv.customer?.phone || '').replace(/\D/g, '').replace(/^00/, '');
+    if (phone && phone.length === 9) phone = '221' + phone; // numéro sénégalais sans indicatif
+    const url = phone
+      ? `https://wa.me/${phone}?text=${encodeURIComponent(message)}`
+      : `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+    toast('PDF téléchargé — joignez-le dans la conversation WhatsApp 📎', { icon: '💬', duration: 6000 });
+  };
+
   const paymentMutation = useMutation({
     mutationFn: (formData: PaymentFormData) => invoicingService.addPayment(id!, formData),
     onSuccess: () => {
@@ -201,12 +234,20 @@ export default function InvoiceDetailPage() {
             <Download className="w-4 h-4" /> PDF
           </button>
           {!isCancelled && (
-            <button
-              onClick={() => { setEmailTo(inv.customer.email || ''); setShowEmailForm(true); }}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <Mail className="w-4 h-4" /> Envoyer par email
-            </button>
+            <>
+              <button
+                onClick={shareOnWhatsApp}
+                className="flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-xl transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" /> WhatsApp
+              </button>
+              <button
+                onClick={() => { setEmailTo(inv.customer.email || ''); setShowEmailForm(true); }}
+                className="btn-secondary flex items-center gap-2"
+              >
+                <Mail className="w-4 h-4" /> Email
+              </button>
+            </>
           )}
           {isDraft && (
             <>
