@@ -52,7 +52,7 @@ export class AuthService {
 
     // Parrainage : code du parrain -> +7 jours d'essai bonus pour le filleul
     let referredById: string | undefined;
-    let trialDays = 14;
+    let trialDays = 7;
     if (data.referralCode) {
       const referrer = await prisma.organization.findUnique({
         where: { referralCode: data.referralCode.toUpperCase() },
@@ -60,7 +60,7 @@ export class AuthService {
       });
       if (referrer) {
         referredById = referrer.id;
-        trialDays = 21;
+        trialDays = 14;
       }
     }
 
@@ -75,7 +75,7 @@ export class AuthService {
         plan: data.plan,
         referralCode,
         referredById,
-        // Essai gratuit (14 jours, ou 21 avec un code de parrainage)
+        // Essai gratuit (7 jours, ou 14 avec un code de parrainage)
         planExpiresAt: new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000),
         users: {
           create: {

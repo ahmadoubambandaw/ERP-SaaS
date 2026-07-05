@@ -77,7 +77,7 @@ export default function RegisterPage() {
             <Logo className="w-14 h-14 mx-auto mb-3" />
             <h1 className="text-2xl md:text-3xl font-bold text-white">Choisissez votre formule</h1>
             <div className="inline-flex items-center gap-2 mt-3 bg-green-500/20 text-green-300 text-sm font-medium px-4 py-1.5 rounded-full">
-              <Gift className="w-4 h-4" /> 14 jours d'essai gratuit · sans carte bancaire
+              <Gift className="w-4 h-4" /> 7 jours d'essai gratuit · sans carte bancaire
             </div>
           </div>
 
@@ -109,7 +109,7 @@ export default function RegisterPage() {
                   onClick={() => { setSelectedPlan(p.id); setStep('form'); }}
                   className={`mt-6 w-full py-2.5 rounded-lg font-medium text-sm transition-colors ${p.highlight ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                 >
-                  Créer gratuitement · 14 jours
+                  Créer gratuitement · 7 jours
                 </button>
               </div>
             ))}
@@ -137,7 +137,7 @@ export default function RegisterPage() {
           <div className="flex items-center justify-between mb-5 p-3 bg-primary-50 border border-primary-100 rounded-xl">
             <div className="flex items-center gap-2 text-sm">
               <Gift className="w-4 h-4 text-primary-600" />
-              <span className="text-gray-600">Formule <strong className="text-gray-900">{plan.name}</strong> — 14 jours gratuits</span>
+              <span className="text-gray-600">Formule <strong className="text-gray-900">{plan.name}</strong> — 7 jours gratuits</span>
             </div>
             <button onClick={() => setStep('plan')} className="text-xs text-primary-600 hover:underline flex items-center gap-1">
               <ArrowLeft className="w-3 h-3" /> Changer
@@ -208,7 +208,7 @@ export default function RegisterPage() {
 
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3">
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Commencer mes 14 jours gratuits
+              Commencer mes 7 jours gratuits
             </button>
           </form>
 
