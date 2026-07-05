@@ -258,3 +258,8 @@ export function generateInvoicePdf(inv: PdfInvoice, fallbackOrgName?: string) {
 export function getInvoicePdfBase64(inv: PdfInvoice, fallbackOrgName?: string): string {
   return buildInvoiceDoc(inv, fallbackOrgName).output('datauristring').split(',')[1];
 }
+
+/** Blob PDF pour le partage natif (WhatsApp, etc.). */
+export function getInvoicePdfBlob(inv: PdfInvoice, fallbackOrgName?: string): Blob {
+  return buildInvoiceDoc(inv, fallbackOrgName).output('blob');
+}
