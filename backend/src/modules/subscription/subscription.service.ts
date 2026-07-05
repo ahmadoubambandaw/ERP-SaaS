@@ -135,6 +135,29 @@ export class SubscriptionService {
     // Nouveaux comptes ce mois-ci
     const newThisMonth = orgs.filter((o) => o.createdAt >= startOfMonth).length;
 
+    // Évolution du revenu sur les 6 derniers mois (buckets YYYY-MM)
+    const MONTHS_FR = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const revenueByMonth: { month: string; revenue: number }[] = [];
+    const buckets = new Map<string, number>();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(1);
+      d.setMonth(d.getMonth() - i);
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      buckets.set(key, 0);
+      revenueByMonth.push({ month: MONTHS_FR[d.getMonth()], revenue: 0 });
+    }
+    completedPayments.forEach((p) => {
+      if (!p.paidAt) return;
+      const key = `${p.paidAt.getFullYear()}-${p.paidAt.getMonth()}`;
+      if (buckets.has(key)) buckets.set(key, (buckets.get(key) || 0) + num(p.amount));
+    });
+    let bi = 0;
+    for (const value of buckets.values()) {
+      revenueByMonth[bi].revenue = value;
+      bi++;
+    }
+
     return {
       totalClients: clientOrgs.length,
       activeClients: activeOrgs.length,
@@ -148,6 +171,7 @@ export class SubscriptionService {
       paymentsCount: completedPayments.length,
       referralsRewarded: referralsTotal,
       planDistribution,
+      revenueByMonth,
       recentPayments: recentPayments.map((p) => ({
         id: p.id,
         org: p.organization?.name || '—',

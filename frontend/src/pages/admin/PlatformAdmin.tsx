@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Shield, Infinity as InfinityIcon, X, TrendingUp, Wallet, Users,
-  Clock, BadgeCheck, Ban, CreditCard, CalendarPlus,
+  Clock, BadgeCheck, Ban, CreditCard, CalendarPlus, Search, Download,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { subscriptionService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { PLAN_LABELS, formatDateFr, formatXof } from '../../utils/subscription';
@@ -35,11 +36,14 @@ interface PlatformStats {
   paymentsCount: number;
   referralsRewarded: number;
   planDistribution: Record<string, number>;
+  revenueByMonth: { month: string; revenue: number }[];
   recentPayments: {
     id: string; org: string; amount: number; currency: string;
     plan: string; months: number; paidAt: string | null;
   }[];
 }
+
+type StatusFilter = 'all' | 'active' | 'expired' | 'unlimited';
 
 function statusOf(org: PlatformOrg): { label: string; cls: string } {
   if (!org.planExpiresAt) return { label: 'Illimité', cls: 'badge-blue' };
@@ -64,9 +68,19 @@ function StatCard({ icon, label, value, hint, accent }: {
   );
 }
 
+function orgMatchesStatus(org: PlatformOrg, filter: StatusFilter): boolean {
+  if (filter === 'all') return true;
+  if (filter === 'unlimited') return org.planExpiresAt === null;
+  if (org.planExpiresAt === null) return filter === 'active'; // illimité compte comme actif
+  const active = new Date(org.planExpiresAt).getTime() >= Date.now();
+  return filter === 'active' ? active : !active;
+}
+
 export default function PlatformAdminPage() {
   const { user } = useAuthStore();
   const [actionError, setActionError] = useState('');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const qc = useQueryClient();
 
   const isOwner = user?.role === 'SUPER_ADMIN';
@@ -84,6 +98,36 @@ export default function PlatformAdminPage() {
     enabled: isOwner,
   });
   const orgs: PlatformOrg[] = data?.data?.data || [];
+
+  const filteredOrgs = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return orgs.filter((o) =>
+      orgMatchesStatus(o, statusFilter) &&
+      (!q || o.name.toLowerCase().includes(q) || o.slug.toLowerCase().includes(q) || o.country.toLowerCase().includes(q)),
+    );
+  }, [orgs, search, statusFilter]);
+
+  const exportCsv = () => {
+    const header = ['Organisation', 'Slug', 'Pays', 'Formule', 'Statut', 'Expire le', 'Utilisateurs', 'Factures', 'Inscrit le'];
+    const rows = filteredOrgs.map((o) => {
+      const st = statusOf(o);
+      return [
+        o.name, o.slug, o.country, PLAN_LABELS[o.plan] || o.plan, st.label,
+        o.planExpiresAt ? formatDateFr(o.planExpiresAt) : 'Illimité',
+        o._count.users, o._count.invoices, formatDateFr(o.createdAt),
+      ];
+    });
+    const escape = (v: unknown) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [header, ...rows].map((r) => r.map(escape).join(';')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `naatal-clients-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${filteredOrgs.length} client(s) exporté(s)`);
+  };
 
   const mutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: unknown }) =>
@@ -156,6 +200,31 @@ export default function PlatformAdminPage() {
           value={`+${stats?.newThisMonth ?? 0}`}
           hint={`${stats?.totalClients ?? 0} clients au total`}
         />
+      </div>
+
+      {/* ===== Évolution des revenus ===== */}
+      <div className="card">
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-green-600" />
+          <h2 className="font-semibold text-gray-900">Évolution des revenus (6 mois)</h2>
+        </div>
+        <div className="p-4 sm:p-6">
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={stats?.revenueByMonth || []}>
+              <defs>
+                <linearGradient id="revGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#22c55e" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#22c55e" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : `${v}`)} width={38} />
+              <Tooltip formatter={(v: number) => [formatXof(v), 'Revenu']} />
+              <Area type="monotone" dataKey="revenue" stroke="#22c55e" strokeWidth={2} fill="url(#revGradient)" name="Revenu" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       {/* ===== Répartition + Paiements récents ===== */}
@@ -233,8 +302,50 @@ export default function PlatformAdminPage() {
       {/* ===== Gestion des clients ===== */}
       <div className="card">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Gestion des clients</h2>
-          <p className="text-xs text-gray-400 mt-0.5">Changez de formule, prolongez, passez en illimité ou suspendez un compte.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-gray-900">Gestion des clients</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Changez de formule, prolongez, passez en illimité ou suspendez un compte.</p>
+            </div>
+            <button
+              onClick={exportCsv}
+              disabled={!filteredOrgs.length}
+              className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              <Download className="w-4 h-4" /> Export CSV
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-4">
+            <div className="relative flex-1 min-w-[180px]">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un client…"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-100 focus:border-primary-300"
+              />
+            </div>
+            <div className="flex gap-1">
+              {([
+                ['all', 'Tous'],
+                ['active', 'Actifs'],
+                ['expired', 'Expirés'],
+                ['unlimited', 'Illimités'],
+              ] as [StatusFilter, string][]).map(([v, l]) => (
+                <button
+                  key={v}
+                  onClick={() => setStatusFilter(v)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                    statusFilter === v
+                      ? 'bg-primary-50 border-primary-200 text-primary-700'
+                      : 'border-gray-200 text-gray-500 hover:bg-gray-50'
+                  }`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[720px]">
@@ -251,7 +362,9 @@ export default function PlatformAdminPage() {
             <tbody className="divide-y divide-gray-50">
               {isLoading ? (
                 <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">Chargement...</td></tr>
-              ) : orgs.map((o) => {
+              ) : !filteredOrgs.length ? (
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-400">Aucun client ne correspond à votre recherche.</td></tr>
+              ) : filteredOrgs.map((o) => {
                 const st = statusOf(o);
                 return (
                   <tr key={o.id} className="hover:bg-gray-50">
