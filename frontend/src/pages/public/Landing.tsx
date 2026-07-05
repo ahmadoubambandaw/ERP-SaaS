@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import Logo from '../../components/ui/Logo';
+import AudioGuide from '../../components/ui/AudioGuide';
 
 // Numéro WhatsApp de contact (format international sans +)
 const WHATSAPP = '221774140900';
@@ -166,6 +167,10 @@ export default function LandingPage() {
             <Link to="/login" className="text-gray-300 hover:text-white text-sm font-medium">
               J'ai déjà un compte →
             </Link>
+          </div>
+          {/* Présentation audio en wolof (visible dès que le MP3 est déposé) */}
+          <div className="mt-6">
+            <AudioGuide />
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-12 text-sm text-gray-400">
             <span className="flex items-center gap-2"><Check className="w-4 h-4 text-green-400" /> Sans engagement</span>
