@@ -84,12 +84,14 @@ export class BillingService {
     });
 
     const data = (await res.json().catch(() => ({}))) as {
-      response_code?: string; response_text?: string; token?: string;
+      response_code?: string; response_text?: string; token?: string; description?: string;
     };
 
     if (data.response_code !== '00' || !data.token || !data.response_text) {
-      console.error('PayDunya create error:', data);
-      throw new AppError('Impossible de créer le paiement. Réessayez.', 502);
+      console.error('PayDunya create error:', res.status, JSON.stringify(data));
+      // On remonte la raison exacte donnée par PayDunya pour faciliter le diagnostic
+      const reason = data.response_text || data.description || `HTTP ${res.status}`;
+      throw new AppError(`PayDunya a refusé le paiement : ${reason}`, 502);
     }
 
     await prisma.subscriptionPayment.create({
