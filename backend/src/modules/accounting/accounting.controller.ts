@@ -96,4 +96,18 @@ export class AccountingController {
       sendSuccess(res, data);
     } catch (err) { next(err); }
   };
+
+  seedSyscohada = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const data = await service.seedSyscohadaChart(req.user!.organizationId);
+      sendSuccess(res, data, 'Plan comptable SYSCOHADA chargé');
+    } catch (err) { next(err); }
+  };
+
+  balanceSheet = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const data = await service.balanceSheet(req.user!.organizationId);
+      sendSuccess(res, data);
+    } catch (err) { next(err); }
+  };
 }
