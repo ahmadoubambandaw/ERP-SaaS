@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Users, Loader2, AlertCircle, Download } from 'lucide-react';
+import { Plus, Users, Loader2, AlertCircle, Download, UploadCloud } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -8,6 +8,28 @@ import { getApiError } from '../../utils/apiError';
 import { exportToCsv } from '../../utils/exportCsv';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
+import ImportModal, { ImportColumn } from '../../components/import/ImportModal';
+import { parseNumberFr, parseDateFr } from '../../utils/importParse';
+
+const IMPORT_COLUMNS: ImportColumn[] = [
+  { key: 'firstName', label: 'Prénom', required: true, aliases: ['prenom'], example: 'Moussa' },
+  { key: 'lastName', label: 'Nom', required: true, aliases: ['nomdefamille'], example: 'Sarr' },
+  { key: 'position', label: 'Poste', required: true, aliases: ['fonction', 'emploi', 'metier'], example: 'Vendeur' },
+  { key: 'baseSalary', label: 'Salaire de base', required: true, aliases: ['salaire', 'paie', 'remuneration'], example: '150 000' },
+  { key: 'phone', label: 'Téléphone', aliases: ['tel', 'telephone', 'portable', 'numero'], example: '70 000 00 00' },
+  { key: 'email', label: 'Email', aliases: ['mail', 'adresseemail'], example: '' },
+  { key: 'department', label: 'Département', aliases: ['service', 'equipe'], example: 'Ventes' },
+  { key: 'startDate', label: 'Date d\'embauche', aliases: ['embauche', 'datedebut', 'debut'], example: '01/03/2024' },
+  { key: 'employmentType', label: 'Type de contrat', aliases: ['contrat', 'typecontrat'], example: 'CDI' },
+];
+
+function parseContract(s: string): string {
+  if (/cdd|contrat|contract/i.test(s)) return 'CONTRACT';
+  if (/partiel|part/i.test(s)) return 'PART_TIME';
+  if (/stag|intern/i.test(s)) return 'INTERN';
+  if (/consult/i.test(s)) return 'CONSULTANT';
+  return 'FULL_TIME';
+}
 
 interface EmployeeFormData {
   firstName: string;
@@ -48,6 +70,7 @@ export default function EmployeesPage() {
   const { organization } = useAuthStore();
   const currency = organization?.currency || 'XOF';
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
 
@@ -97,6 +120,9 @@ export default function EmployeesPage() {
               <Download className="w-4 h-4" /> Exporter
             </button>
           )}
+          <button onClick={() => setShowImport(true)} className="btn-secondary flex items-center gap-2">
+            <UploadCloud className="w-4 h-4" /> Importer
+          </button>
           <button
             onClick={() => { setShowForm(true); setErrorMsg(''); }}
             className="btn-primary flex items-center gap-2"
@@ -105,6 +131,36 @@ export default function EmployeesPage() {
           </button>
         </div>
       </div>
+
+      {showImport && (
+        <ImportModal
+          title="Importer des employés"
+          description="Récupérez votre liste d'employés depuis Excel, Word ou votre cahier de paie."
+          templateName="employes"
+          columns={IMPORT_COLUMNS}
+          toPayload={(row) => {
+            if (!row.firstName || !row.lastName) return 'Prénom et nom sont obligatoires';
+            if (!row.position) return 'Le poste est obligatoire';
+            const salary = parseNumberFr(row.baseSalary);
+            if (salary === undefined) return 'Salaire de base manquant ou invalide';
+            const payload: Record<string, unknown> = {
+              firstName: row.firstName,
+              lastName: row.lastName,
+              position: row.position,
+              baseSalary: salary,
+              startDate: parseDateFr(row.startDate) || new Date().toISOString().slice(0, 10),
+              employmentType: parseContract(row.employmentType),
+            };
+            if (row.phone) payload.phone = row.phone;
+            if (row.email) payload.email = row.email;
+            if (row.department) payload.department = row.department;
+            return payload;
+          }}
+          onRow={(payload) => hrService.createEmployee(payload)}
+          onDone={(n) => { qc.invalidateQueries({ queryKey: ['employees'] }); toast.success(`${n} employé(s) importé(s)`); }}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {showForm && (
         <div className="card p-6 border-2 border-primary-100">

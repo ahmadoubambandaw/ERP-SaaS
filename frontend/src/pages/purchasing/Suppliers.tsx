@@ -1,11 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Truck, Loader2, Download } from 'lucide-react';
+import { Plus, Truck, Loader2, Download, UploadCloud } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { invoicingService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { exportToCsv } from '../../utils/exportCsv';
+import ImportModal, { ImportColumn } from '../../components/import/ImportModal';
+
+const IMPORT_COLUMNS: ImportColumn[] = [
+  { key: 'name', label: 'Nom', required: true, aliases: ['fournisseur', 'societe', 'entreprise'], example: 'Ets Fall & Frères' },
+  { key: 'phone', label: 'Téléphone', aliases: ['tel', 'telephone', 'portable', 'numero', 'contact'], example: '33 800 00 00' },
+  { key: 'email', label: 'Email', aliases: ['mail', 'adresseemail', 'courriel'], example: 'contact@fall.sn' },
+  { key: 'address', label: 'Adresse', aliases: ['ville', 'quartier', 'localite'], example: 'Sandaga, Dakar' },
+  { key: 'country', label: 'Pays', aliases: [], example: 'Sénégal' },
+  { key: 'taxId', label: 'NINEA/NIF', aliases: ['ninea', 'nif'], example: '' },
+];
 
 interface SupplierFormData {
   name: string;
@@ -28,6 +38,7 @@ interface Supplier {
 
 export default function SuppliersPage() {
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const qc = useQueryClient();
   const { register, handleSubmit, reset, formState: { errors } } = useForm<SupplierFormData>();
@@ -69,10 +80,33 @@ export default function SuppliersPage() {
               <Download className="w-4 h-4" /> Exporter
             </button>
           )}
+          <button onClick={() => setShowImport(true)} className="btn-secondary flex items-center gap-2">
+            <UploadCloud className="w-4 h-4" /> Importer
+          </button>
           <button onClick={() => { setShowForm(true); setErrorMsg(''); }} className="btn-primary flex items-center gap-2">
             <Plus className="w-4 h-4" /> Nouveau fournisseur
           </button>
         </div>
+        {showImport && (
+          <ImportModal
+            title="Importer des fournisseurs"
+            templateName="fournisseurs"
+            columns={IMPORT_COLUMNS}
+            toPayload={(row) => {
+              if (!row.name) return 'Le nom du fournisseur est obligatoire';
+              const payload: Record<string, unknown> = { name: row.name };
+              if (row.phone) payload.phone = row.phone;
+              if (row.email) payload.email = row.email;
+              if (row.address) payload.address = row.address;
+              if (row.country) payload.country = row.country;
+              if (row.taxId) payload.taxId = row.taxId;
+              return payload;
+            }}
+            onRow={(payload) => invoicingService.createSupplier(payload)}
+            onDone={(n) => { qc.invalidateQueries({ queryKey: ['suppliers'] }); toast.success(`${n} fournisseur(s) importé(s)`); }}
+            onClose={() => setShowImport(false)}
+          />
+        )}
       </div>
 
       {showForm && (
