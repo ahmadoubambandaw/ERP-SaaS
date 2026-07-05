@@ -1,13 +1,22 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, BookOpen, TrendingUp, List, FileText, Check, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, BookOpen, TrendingUp, List, FileText, Check, Trash2, ChevronDown, ChevronUp, Scale, Sparkles, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
+import toast from 'react-hot-toast';
 import { accountingService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import { formatCurrency, formatDate } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import StatusBadge from '../../components/ui/StatusBadge';
 
-type Tab = 'entries' | 'accounts' | 'journals' | 'balance';
+type Tab = 'entries' | 'accounts' | 'journals' | 'balance' | 'bilan';
+
+interface BilanLine { code: string; name: string; amount: number; }
+interface BalanceSheet {
+  actif: { immobilise: BilanLine[]; circulant: BilanLine[]; tresorerie: BilanLine[] };
+  passif: { capitaux: BilanLine[]; dettesFin: BilanLine[]; circulant: BilanLine[]; tresorerie: BilanLine[] };
+  resultatNet: number; totalActif: number; totalPassif: number; equilibre: boolean;
+}
 
 const ACCOUNT_TYPES = [
   { value: 'ASSET', label: 'Actif', color: 'badge-blue' },
@@ -52,6 +61,22 @@ export default function AccountingPage() {
     queryKey: ['trial-balance'],
     queryFn: () => accountingService.trialBalance(),
     enabled: tab === 'balance',
+  });
+  const { data: bilanData, isLoading: bilanLoading } = useQuery({
+    queryKey: ['balance-sheet'],
+    queryFn: () => accountingService.balanceSheet(),
+    enabled: tab === 'bilan',
+  });
+  const bilan = bilanData?.data?.data as BalanceSheet | undefined;
+
+  const seedMutation = useMutation({
+    mutationFn: () => accountingService.seedSyscohada(),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+      const created = res?.data?.data?.created ?? 0;
+      toast.success(created > 0 ? `${created} compte(s) ajouté(s) au plan comptable` : 'Plan comptable déjà à jour');
+    },
+    onError: (err: unknown) => toast.error(getApiError(err, 'Échec du chargement du plan')),
   });
 
   const entries = entriesData?.data?.data?.entries || entriesData?.data?.data || [];
@@ -129,6 +154,7 @@ export default function AccountingPage() {
     { id: 'accounts' as Tab, label: 'Plan comptable', icon: List },
     { id: 'journals' as Tab, label: 'Journaux', icon: BookOpen },
     { id: 'balance' as Tab, label: 'Balance', icon: TrendingUp },
+    { id: 'bilan' as Tab, label: 'Bilan (Actif/Passif)', icon: Scale },
   ];
 
   const totalDebitBalance = balance.reduce((s, b) => s + Number(b.debit), 0);
@@ -147,9 +173,20 @@ export default function AccountingPage() {
           </button>
         )}
         {tab === 'accounts' && (
-          <button onClick={() => setShowAccountForm(true)} className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Nouveau compte
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => seedMutation.mutate()}
+              disabled={seedMutation.isPending}
+              className="btn-secondary flex items-center gap-2"
+              title="Charger le plan comptable SYSCOHADA standard"
+            >
+              {seedMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              Plan SYSCOHADA
+            </button>
+            <button onClick={() => setShowAccountForm(true)} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Nouveau compte
+            </button>
+          </div>
         )}
         {tab === 'journals' && (
           <button onClick={() => setShowJournalForm(true)} className="btn-primary flex items-center gap-2">
@@ -447,7 +484,16 @@ export default function AccountingPage() {
           {accounts.length === 0 && (
             <div className="card px-6 py-16 text-center">
               <List className="w-12 h-12 mx-auto mb-3 text-gray-200" />
-              <p className="text-gray-400">Aucun compte — le plan comptable est vide</p>
+              <p className="text-gray-500 font-medium">Votre plan comptable est vide</p>
+              <p className="text-gray-400 text-sm mt-1 mb-5">Chargez le plan comptable SYSCOHADA standard pour démarrer en un clic.</p>
+              <button
+                onClick={() => seedMutation.mutate()}
+                disabled={seedMutation.isPending}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                {seedMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Charger le plan comptable SYSCOHADA
+              </button>
             </div>
           )}
         </div>
@@ -535,6 +581,93 @@ export default function AccountingPage() {
           )}
         </div>
       )}
+
+      {/* BILAN TAB (Actif / Passif) */}
+      {tab === 'bilan' && (
+        <div className="space-y-4">
+          {bilanLoading ? (
+            <div className="card px-6 py-16 text-center text-gray-400">
+              <Loader2 className="w-6 h-6 mx-auto animate-spin" />
+            </div>
+          ) : !bilan || !bilan.actif || !bilan.passif || (bilan.totalActif === 0 && bilan.totalPassif === 0) ? (
+            <div className="card px-6 py-16 text-center">
+              <Scale className="w-12 h-12 mx-auto mb-3 text-gray-200" />
+              <p className="text-gray-500 font-medium">Bilan vide</p>
+              <p className="text-gray-400 text-sm mt-1">Le bilan se remplit à partir de vos écritures comptables validées.</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* ACTIF */}
+                <div className="card overflow-hidden">
+                  <div className="px-6 py-3 bg-blue-50 border-b border-blue-100 flex items-center justify-between">
+                    <h3 className="font-bold text-blue-800">ACTIF</h3>
+                    <span className="text-xs text-blue-600">Ce que l'entreprise possède</span>
+                  </div>
+                  <div className="divide-y divide-gray-50">
+                    {renderBilanGroup('Actif immobilisé', bilan.actif.immobilise, currency)}
+                    {renderBilanGroup('Actif circulant', bilan.actif.circulant, currency)}
+                    {renderBilanGroup('Trésorerie – Actif', bilan.actif.tresorerie, currency)}
+                  </div>
+                  <div className="px-6 py-3 bg-blue-600 text-white flex items-center justify-between">
+                    <span className="font-bold">TOTAL ACTIF</span>
+                    <span className="font-bold font-mono">{formatCurrency(bilan.totalActif, currency)}</span>
+                  </div>
+                </div>
+
+                {/* PASSIF */}
+                <div className="card overflow-hidden">
+                  <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
+                    <h3 className="font-bold text-amber-800">PASSIF</h3>
+                    <span className="text-xs text-amber-600">Ce que l'entreprise doit</span>
+                  </div>
+                  <div className="divide-y divide-gray-50">
+                    {renderBilanGroup('Capitaux propres', bilan.passif.capitaux, currency)}
+                    {renderBilanGroup('Dettes financières', bilan.passif.dettesFin, currency)}
+                    {renderBilanGroup('Passif circulant (dettes)', bilan.passif.circulant, currency)}
+                    {renderBilanGroup('Trésorerie – Passif', bilan.passif.tresorerie, currency)}
+                  </div>
+                  <div className="px-6 py-3 bg-amber-500 text-white flex items-center justify-between">
+                    <span className="font-bold">TOTAL PASSIF</span>
+                    <span className="font-bold font-mono">{formatCurrency(bilan.totalPassif, currency)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={`card px-6 py-4 flex items-center justify-between ${bilan.equilibre ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                <span className={`font-semibold ${bilan.equilibre ? 'text-green-700' : 'text-red-700'}`}>
+                  {bilan.equilibre ? '✓ Bilan équilibré (Actif = Passif)' : '⚠ Bilan déséquilibré — vérifiez vos écritures'}
+                </span>
+                <span className="text-sm text-gray-500">
+                  Résultat net : <strong className={bilan.resultatNet >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {formatCurrency(bilan.resultatNet, currency)}
+                  </strong>
+                </span>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Rend un groupe de lignes du bilan avec son sous-total
+function renderBilanGroup(title: string, lines: BilanLine[], currency: string) {
+  if (!lines || lines.length === 0) return null;
+  const subtotal = lines.reduce((s, l) => s + l.amount, 0);
+  return (
+    <div>
+      <div className="px-6 pt-3 pb-1 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-400">{title}</span>
+        <span className="text-xs font-mono text-gray-500">{formatCurrency(subtotal, currency)}</span>
+      </div>
+      {lines.map((l) => (
+        <div key={l.code} className="px-6 py-2 flex items-center justify-between text-sm">
+          <span className="text-gray-700"><span className="font-mono text-gray-400 mr-2">{l.code}</span>{l.name}</span>
+          <span className="font-mono text-gray-900">{formatCurrency(l.amount, currency)}</span>
+        </div>
+      ))}
     </div>
   );
 }

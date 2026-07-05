@@ -2,6 +2,61 @@ import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
 
+type AccType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
+
+// Plan comptable SYSCOHADA révisé — comptes essentiels pour une PME.
+const SYSCOHADA_ACCOUNTS: { code: string; name: string; type: AccType }[] = [
+  // Classe 1 — Ressources durables (capitaux propres & dettes financières)
+  { code: '101', name: 'Capital social', type: 'EQUITY' },
+  { code: '106', name: 'Réserves', type: 'EQUITY' },
+  { code: '110', name: 'Report à nouveau', type: 'EQUITY' },
+  { code: '120', name: "Résultat de l'exercice (bénéfice)", type: 'EQUITY' },
+  { code: '129', name: "Résultat de l'exercice (perte)", type: 'EQUITY' },
+  { code: '162', name: 'Emprunts et dettes auprès des établissements de crédit', type: 'LIABILITY' },
+  // Classe 2 — Actif immobilisé
+  { code: '221', name: 'Terrains', type: 'ASSET' },
+  { code: '231', name: 'Bâtiments', type: 'ASSET' },
+  { code: '241', name: 'Matériel et outillage', type: 'ASSET' },
+  { code: '244', name: 'Matériel et mobilier de bureau', type: 'ASSET' },
+  { code: '245', name: 'Matériel de transport', type: 'ASSET' },
+  { code: '2441', name: 'Matériel informatique', type: 'ASSET' },
+  // Classe 3 — Stocks
+  { code: '311', name: 'Marchandises', type: 'ASSET' },
+  { code: '331', name: 'Matières premières', type: 'ASSET' },
+  { code: '358', name: 'Produits finis', type: 'ASSET' },
+  // Classe 4 — Tiers
+  { code: '401', name: 'Fournisseurs', type: 'LIABILITY' },
+  { code: '409', name: 'Fournisseurs débiteurs (avances)', type: 'ASSET' },
+  { code: '411', name: 'Clients', type: 'ASSET' },
+  { code: '419', name: 'Clients créditeurs (avances reçues)', type: 'LIABILITY' },
+  { code: '421', name: 'Personnel, salaires dus', type: 'LIABILITY' },
+  { code: '431', name: 'Sécurité sociale (IPRES, CSS)', type: 'LIABILITY' },
+  { code: '441', name: "État, impôt sur les bénéfices", type: 'LIABILITY' },
+  { code: '443', name: 'État, TVA facturée', type: 'LIABILITY' },
+  { code: '445', name: 'État, TVA récupérable', type: 'ASSET' },
+  { code: '447', name: 'État, autres impôts et taxes', type: 'LIABILITY' },
+  // Classe 5 — Trésorerie
+  { code: '521', name: 'Banques', type: 'ASSET' },
+  { code: '531', name: 'Mobile Money (Wave, Orange Money)', type: 'ASSET' },
+  { code: '571', name: 'Caisse', type: 'ASSET' },
+  // Classe 6 — Charges
+  { code: '601', name: 'Achats de marchandises', type: 'EXPENSE' },
+  { code: '602', name: 'Achats de matières premières', type: 'EXPENSE' },
+  { code: '605', name: "Autres achats (eau, électricité, fournitures)", type: 'EXPENSE' },
+  { code: '611', name: 'Transports', type: 'EXPENSE' },
+  { code: '622', name: 'Locations et charges locatives', type: 'EXPENSE' },
+  { code: '627', name: 'Services bancaires', type: 'EXPENSE' },
+  { code: '641', name: 'Impôts et taxes', type: 'EXPENSE' },
+  { code: '661', name: 'Charges de personnel (salaires)', type: 'EXPENSE' },
+  { code: '664', name: 'Charges sociales', type: 'EXPENSE' },
+  { code: '681', name: "Dotations aux amortissements", type: 'EXPENSE' },
+  // Classe 7 — Produits
+  { code: '701', name: 'Ventes de marchandises', type: 'REVENUE' },
+  { code: '706', name: 'Services vendus', type: 'REVENUE' },
+  { code: '707', name: 'Produits accessoires', type: 'REVENUE' },
+  { code: '771', name: 'Produits financiers', type: 'REVENUE' },
+];
+
 const accountSchema = z.object({
   code: z.string().min(1),
   name: z.string().min(1),
@@ -188,4 +243,76 @@ export class AccountingService {
 
     return { account, lines: ledgerLines };
   }
+
+  /** Charge le plan comptable SYSCOHADA standard (ne recrée pas les comptes existants). */
+  async seedSyscohadaChart(organizationId: string) {
+    const res = await prisma.account.createMany({
+      data: SYSCOHADA_ACCOUNTS.map((a) => ({ ...a, organizationId })),
+      skipDuplicates: true,
+    });
+    const total = await prisma.account.count({ where: { organizationId } });
+    return { created: res.count, total };
+  }
+
+  /** Bilan comptable : Actif / Passif classés selon les classes SYSCOHADA. */
+  async balanceSheet(organizationId: string) {
+    const accounts = await prisma.account.findMany({
+      where: { organizationId },
+      include: {
+        debitLines: { include: { entry: { select: { status: true } } } },
+        creditLines: { include: { entry: { select: { status: true } } } },
+      },
+      orderBy: { code: 'asc' },
+    });
+
+    const balances = accounts.map((acc) => {
+      const debit = acc.debitLines.filter((l) => l.entry.status === 'POSTED').reduce((s, l) => s + Number(l.debit), 0);
+      const credit = acc.creditLines.filter((l) => l.entry.status === 'POSTED').reduce((s, l) => s + Number(l.credit), 0);
+      return { code: acc.code, name: acc.name, type: acc.type as AccType, bal: debit - credit };
+    });
+
+    // Résultat net = Produits (classe 7) - Charges (classe 6)
+    const produits = balances.filter((b) => b.code.startsWith('7')).reduce((s, b) => s - b.bal, 0); // produits: solde créditeur
+    const charges = balances.filter((b) => b.code.startsWith('6')).reduce((s, b) => s + b.bal, 0);   // charges: solde débiteur
+    const resultatNet = produits - charges;
+
+    const actif = { immobilise: [] as Line[], circulant: [] as Line[], tresorerie: [] as Line[] };
+    const passif = { capitaux: [] as Line[], dettesFin: [] as Line[], circulant: [] as Line[], tresorerie: [] as Line[] };
+
+    for (const b of balances) {
+      if (Math.abs(b.bal) < 0.005) continue;
+      const cls = b.code.charAt(0);
+      const line = (amount: number): Line => ({ code: b.code, name: b.name, amount });
+
+      if (cls === '2') actif.immobilise.push(line(b.bal));
+      else if (cls === '3') actif.circulant.push(line(b.bal));
+      else if (cls === '4') {
+        if (b.bal >= 0) actif.circulant.push(line(b.bal));
+        else passif.circulant.push(line(-b.bal));
+      } else if (cls === '5') {
+        if (b.bal >= 0) actif.tresorerie.push(line(b.bal));
+        else passif.tresorerie.push(line(-b.bal));
+      } else if (cls === '1') {
+        if (b.code.startsWith('16')) passif.dettesFin.push(line(-b.bal));
+        else passif.capitaux.push(line(-b.bal));
+      }
+    }
+
+    // Le résultat net de l'exercice figure au passif (capitaux propres)
+    if (Math.abs(resultatNet) >= 0.005) {
+      passif.capitaux.push({ code: '13', name: "Résultat net de l'exercice", amount: resultatNet });
+    }
+
+    const sum = (arr: Line[]) => arr.reduce((s, l) => s + l.amount, 0);
+    const totalActif = sum(actif.immobilise) + sum(actif.circulant) + sum(actif.tresorerie);
+    const totalPassif = sum(passif.capitaux) + sum(passif.dettesFin) + sum(passif.circulant) + sum(passif.tresorerie);
+
+    return {
+      actif, passif, resultatNet,
+      totalActif, totalPassif,
+      equilibre: Math.abs(totalActif - totalPassif) < 0.5,
+    };
+  }
 }
+
+interface Line { code: string; name: string; amount: number; }

@@ -11,6 +11,7 @@ accountingRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
 
 accountingRouter.get('/accounts', ctrl.listAccounts);
 accountingRouter.post('/accounts', authorize('ADMIN', 'ACCOUNTANT'), ctrl.createAccount);
+accountingRouter.post('/accounts/seed-syscohada', authorize('ADMIN', 'ACCOUNTANT'), ctrl.seedSyscohada);
 accountingRouter.get('/accounts/:id', ctrl.getAccount);
 accountingRouter.patch('/accounts/:id', authorize('ADMIN', 'ACCOUNTANT'), ctrl.updateAccount);
 
@@ -24,4 +25,5 @@ accountingRouter.patch('/entries/:id/post', authorize('ADMIN', 'ACCOUNTANT'), ct
 accountingRouter.delete('/entries/:id', authorize('ADMIN', 'ACCOUNTANT'), ctrl.deleteEntry);
 
 accountingRouter.get('/reports/trial-balance', ctrl.trialBalance);
+accountingRouter.get('/reports/balance-sheet', ctrl.balanceSheet);
 accountingRouter.get('/reports/ledger/:accountCode', ctrl.ledger);

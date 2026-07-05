@@ -201,5 +201,7 @@ export const accountingService = {
   postEntry: (id: string) => api.patch(`/accounting/entries/${id}/post`),
   deleteEntry: (id: string) => api.delete(`/accounting/entries/${id}`),
   trialBalance: () => api.get('/accounting/reports/trial-balance'),
+  balanceSheet: () => api.get('/accounting/reports/balance-sheet'),
+  seedSyscohada: () => api.post('/accounting/accounts/seed-syscohada'),
   ledger: (accountCode: string) => api.get(`/accounting/reports/ledger/${accountCode}`),
 };
