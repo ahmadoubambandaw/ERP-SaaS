@@ -11,6 +11,8 @@ const ctrl = new InventoryController();
 inventoryRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
 
 inventoryRouter.get('/products', ctrl.listProducts);
+inventoryRouter.get('/categories', ctrl.listCategories);
+inventoryRouter.put('/categories/image', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl.setCategoryImage);
 inventoryRouter.post('/products', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl.createProduct);
 inventoryRouter.get('/products/:id', ctrl.getProduct);
 inventoryRouter.patch('/products/:id', authorize('ADMIN', 'INVENTORY_MANAGER'), ctrl.updateProduct);

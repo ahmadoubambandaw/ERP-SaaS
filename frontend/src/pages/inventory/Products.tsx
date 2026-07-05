@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, AlertTriangle, Loader2, Download, UploadCloud } from 'lucide-react';
-import { useState } from 'react';
+import { Plus, Package, AlertTriangle, Loader2, Download, UploadCloud, Camera, LayoutGrid } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { inventoryService } from '../../services/api';
@@ -10,6 +10,21 @@ import { formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 import ImportModal, { ImportColumn } from '../../components/import/ImportModal';
 import { parseNumberFr } from '../../utils/importParse';
+import { fileToSquareDataUrl } from '../../utils/imageFile';
+
+interface ProductGroup {
+  name: string;
+  count: number;
+  image: string | null;
+}
+
+// Couleur stable par nom de groupe pour les pastilles sans photo
+const GROUP_COLORS = ['bg-blue-500', 'bg-emerald-500', 'bg-violet-500', 'bg-amber-500', 'bg-rose-500', 'bg-teal-500'];
+function groupColor(name: string): string {
+  let h = 0;
+  for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 997;
+  return GROUP_COLORS[h % GROUP_COLORS.length];
+}
 
 const IMPORT_COLUMNS: ImportColumn[] = [
   { key: 'name', label: 'Nom du produit', required: true, aliases: ['produit', 'article', 'designation', 'libelle'], example: 'Riz parfumé 25kg' },
@@ -38,14 +53,56 @@ export default function ProductsPage() {
 
   const { data, isLoading } = useQuery({ queryKey: ['products'], queryFn: () => inventoryService.products() });
   const { data: lowData } = useQuery({ queryKey: ['low-stock'], queryFn: () => inventoryService.lowStock() });
+  const { data: catData } = useQuery({ queryKey: ['product-categories'], queryFn: () => inventoryService.categories() });
 
-  const products = data?.data?.data || [];
+  const allProducts = data?.data?.data || [];
   const lowStock = lowData?.data?.data || [];
+  const groups: ProductGroup[] = catData?.data?.data || [];
+
+  const [activeGroup, setActiveGroup] = useState<string | null>(null);
+  const [uploadingGroup, setUploadingGroup] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const pendingGroupRef = useRef<string | null>(null);
+
+  const products = useMemo(
+    () => (activeGroup ? allProducts.filter((p: Record<string, unknown>) => p.category === activeGroup) : allProducts),
+    [allProducts, activeGroup],
+  );
+
+  const photoMutation = useMutation({
+    mutationFn: ({ name, image }: { name: string; image: string | null }) =>
+      inventoryService.setCategoryImage(name, image),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['product-categories'] });
+      toast.success('Photo du groupe enregistrée');
+    },
+    onError: (err: unknown) => toast.error(getApiError(err, 'Impossible d\'enregistrer la photo')),
+    onSettled: () => setUploadingGroup(null),
+  });
+
+  const pickGroupPhoto = (name: string) => {
+    pendingGroupRef.current = name;
+    photoInputRef.current?.click();
+  };
+
+  const handleGroupPhotoFile = async (file: File) => {
+    const name = pendingGroupRef.current;
+    if (!name) return;
+    try {
+      setUploadingGroup(name);
+      const image = await fileToSquareDataUrl(file);
+      photoMutation.mutate({ name, image });
+    } catch (e) {
+      setUploadingGroup(null);
+      toast.error((e as Error).message);
+    }
+  };
 
   const mutation = useMutation({
     mutationFn: (d: unknown) => inventoryService.createProduct(d),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] });
+      qc.invalidateQueries({ queryKey: ['product-categories'] });
       setShowForm(false);
       setErrorMsg('');
       reset();
@@ -121,6 +178,69 @@ export default function ProductsPage() {
           <p className="text-sm text-orange-700">
             <strong>{lowStock.length}</strong> produit(s) en dessous du seuil de reapprovisionnement
           </p>
+        </div>
+      )}
+
+      {/* ===== Groupes de produits (avec photo de représentation) ===== */}
+      {groups.length > 0 && (
+        <div className="card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <LayoutGrid className="w-4 h-4 text-primary-600" />
+            <h3 className="text-sm font-semibold text-gray-900">Groupes de produits</h3>
+            <span className="text-xs text-gray-400">— touchez 📷 pour ajouter une photo</span>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-1">
+            <button
+              onClick={() => setActiveGroup(null)}
+              className="flex flex-col items-center gap-1.5 shrink-0 w-[86px]"
+            >
+              <div className={`w-[74px] h-[74px] rounded-2xl flex items-center justify-center bg-gray-900 text-white ${activeGroup === null ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}>
+                <Package className="w-7 h-7" />
+              </div>
+              <span className="text-xs font-medium text-gray-700">Tous</span>
+              <span className="text-[10px] text-gray-400 -mt-1">{allProducts.length}</span>
+            </button>
+
+            {groups.map((g) => (
+              <div key={g.name} className="flex flex-col items-center gap-1.5 shrink-0 w-[86px]">
+                <div className="relative">
+                  <button
+                    onClick={() => setActiveGroup(activeGroup === g.name ? null : g.name)}
+                    className={`block w-[74px] h-[74px] rounded-2xl overflow-hidden ${activeGroup === g.name ? 'ring-2 ring-primary-500 ring-offset-2' : ''}`}
+                    title={`Afficher les produits « ${g.name} »`}
+                  >
+                    {g.image ? (
+                      <img src={g.image} alt={g.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center text-white text-2xl font-bold ${groupColor(g.name)}`}>
+                        {g.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => pickGroupPhoto(g.name)}
+                    className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-primary-600 shadow-sm"
+                    title={`Changer la photo de « ${g.name} »`}
+                  >
+                    {uploadingGroup === g.name ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <span className="text-xs font-medium text-gray-700 truncate w-full text-center">{g.name}</span>
+                <span className="text-[10px] text-gray-400 -mt-1">{g.count} produit{g.count > 1 ? 's' : ''}</span>
+              </div>
+            ))}
+          </div>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleGroupPhotoFile(f);
+              e.target.value = '';
+            }}
+          />
         </div>
       )}
 

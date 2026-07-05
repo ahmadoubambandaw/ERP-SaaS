@@ -15,6 +15,12 @@ export class InventoryController {
   getProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { sendSuccess(res, await service.getProduct(req.user!.organizationId, req.params.id)); } catch (e) { next(e); }
   };
+  listCategories = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try { sendSuccess(res, await service.listCategories(req.user!.organizationId)); } catch (e) { next(e); }
+  };
+  setCategoryImage = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try { sendSuccess(res, await service.setCategoryImage(req.user!.organizationId, req.body), 'Photo du groupe enregistrée'); } catch (e) { next(e); }
+  };
   updateProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try { sendSuccess(res, await service.updateProduct(req.user!.organizationId, req.params.id, req.body)); } catch (e) { next(e); }
   };
