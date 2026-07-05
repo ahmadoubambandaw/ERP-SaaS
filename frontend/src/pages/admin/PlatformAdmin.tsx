@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Shield, Infinity as InfinityIcon, X, TrendingUp, Wallet, Users,
-  Clock, BadgeCheck, Ban, CreditCard, CalendarPlus, Search, Download,
+  Clock, BadgeCheck, Ban, CreditCard, CalendarPlus, Search, Download, Send, Percent,
 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ import { subscriptionService } from '../../services/api';
 import { getApiError } from '../../utils/apiError';
 import { PLAN_LABELS, formatDateFr, formatXof } from '../../utils/subscription';
 import { useAuthStore } from '../../store/auth.store';
+import OrgDetailModal from './OrgDetailModal';
 
 interface PlatformOrg {
   id: string;
@@ -35,6 +36,8 @@ interface PlatformStats {
   mrr: number;
   paymentsCount: number;
   referralsRewarded: number;
+  conversionRate: number;
+  everPaidClients: number;
   planDistribution: Record<string, number>;
   revenueByMonth: { month: string; revenue: number }[];
   recentPayments: {
@@ -81,6 +84,7 @@ export default function PlatformAdminPage() {
   const [actionError, setActionError] = useState('');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [detailOrgId, setDetailOrgId] = useState<string | null>(null);
   const qc = useQueryClient();
 
   const isOwner = user?.role === 'SUPER_ADMIN';
@@ -140,6 +144,21 @@ export default function PlatformAdminPage() {
     onError: (err: unknown) => setActionError(getApiError(err)),
   });
 
+  const remindersMutation = useMutation({
+    mutationFn: () => subscriptionService.runReminders(),
+    onSuccess: (res) => {
+      const r = res?.data?.data as { configured: boolean; sent: number } | undefined;
+      if (r && !r.configured) {
+        toast('Email non configuré (BREVO_API_KEY manquant). Les relances partiront une fois l\'email activé.', { icon: '✉️', duration: 6000 });
+      } else if (r && r.sent > 0) {
+        toast.success(`${r.sent} relance(s) envoyée(s) aux clients qui expirent bientôt`);
+      } else {
+        toast('Aucun client n\'expire dans les 3 prochains jours. Rien à envoyer.', { icon: '👍' });
+      }
+    },
+    onError: (err: unknown) => setActionError(getApiError(err)),
+  });
+
   if (!isOwner) {
     return (
       <div className="text-center py-20 text-gray-400">
@@ -154,11 +173,26 @@ export default function PlatformAdminPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <Shield className="w-6 h-6 text-primary-600" /> Tableau de bord fondateur
-        </h1>
-        <p className="text-gray-500 text-sm">Vos revenus, vos clients et le contrôle de toute la plateforme Naatal</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Shield className="w-6 h-6 text-primary-600" /> Tableau de bord fondateur
+          </h1>
+          <p className="text-gray-500 text-sm">Vos revenus, vos clients et le contrôle de toute la plateforme Naatal</p>
+        </div>
+        <button
+          onClick={() => {
+            if (window.confirm('Envoyer un email de relance à tous les clients dont l\'abonnement expire dans 3 jours ou moins ?')) {
+              remindersMutation.mutate();
+            }
+          }}
+          disabled={remindersMutation.isPending}
+          className="btn-secondary text-sm flex items-center gap-2 disabled:opacity-50"
+          title="Relancer les clients qui expirent bientôt"
+        >
+          <Send className={`w-4 h-4 ${remindersMutation.isPending ? 'animate-pulse' : ''}`} />
+          Envoyer les relances
+        </button>
       </div>
 
       {/* ===== Indicateurs clés ===== */}
@@ -231,9 +265,14 @@ export default function PlatformAdminPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Répartition par formule */}
         <div className="card p-6">
-          <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-primary-600" /> Répartition par formule
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+              <CreditCard className="w-4 h-4 text-primary-600" /> Répartition par formule
+            </h2>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-primary-700 bg-primary-50 px-2.5 py-1 rounded-full" title="Clients ayant déjà payé / total des clients">
+              <Percent className="w-3 h-3" /> {stats?.conversionRate ?? 0}% convertis
+            </span>
+          </div>
           <div className="space-y-3">
             {(['STARTER', 'PROFESSIONAL', 'ENTERPRISE'] as const).map((p) => {
               const count = dist[p] || 0;
@@ -369,8 +408,14 @@ export default function PlatformAdminPage() {
                 return (
                   <tr key={o.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <p className="font-medium">{o.name}</p>
-                      <p className="text-xs text-gray-400 font-mono">{o.slug} • {o.country} • depuis {formatDateFr(o.createdAt)}</p>
+                      <button
+                        onClick={() => setDetailOrgId(o.id)}
+                        className="text-left group"
+                        title="Voir la fiche client"
+                      >
+                        <p className="font-medium text-gray-900 group-hover:text-primary-600 transition-colors">{o.name}</p>
+                        <p className="text-xs text-gray-400 font-mono">{o.slug} • {o.country} • depuis {formatDateFr(o.createdAt)}</p>
+                      </button>
                     </td>
                     <td className="px-6 py-4">
                       <select
@@ -431,8 +476,11 @@ export default function PlatformAdminPage() {
 
       <p className="text-xs text-gray-400">
         💡 Quand un client vous paie par Wave/Orange Money, prolongez son abonnement d'un clic — son accès est
-        rétabli immédiatement. Les paiements PayDunya s'appliquent automatiquement.
+        rétabli immédiatement. Les paiements PayDunya s'appliquent automatiquement. Cliquez sur le nom d'un client
+        pour voir sa fiche détaillée.
       </p>
+
+      {detailOrgId && <OrgDetailModal orgId={detailOrgId} onClose={() => setDetailOrgId(null)} />}
     </div>
   );
 }
