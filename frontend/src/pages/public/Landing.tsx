@@ -83,7 +83,7 @@ const PLANS = [
     period: 'F CFA / mois',
     desc: 'Pour les PME qui grandissent',
     features: ['10 utilisateurs', 'Tout Starter, plus :', 'RH & Paie complète', 'CRM & pipeline commercial', 'Gestion de projets', 'Export Excel & PDF'],
-    cta: 'Essayer 14 jours gratuits',
+    cta: 'Essayer 7 jours gratuits',
     highlight: true,
   },
   {
