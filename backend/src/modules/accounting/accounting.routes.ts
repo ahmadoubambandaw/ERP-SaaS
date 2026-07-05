@@ -7,22 +7,22 @@ import { subscriptionGuard } from '../../middleware/subscription.middleware';
 export const accountingRouter = Router();
 const ctrl = new AccountingController();
 
-accountingRouter.use(authenticate, tenantMiddleware, subscriptionGuard);
+accountingRouter.use(authenticate, tenantMiddleware, subscriptionGuard, authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'));
 
 accountingRouter.get('/accounts', ctrl.listAccounts);
-accountingRouter.post('/accounts', authorize('ADMIN', 'ACCOUNTANT'), ctrl.createAccount);
-accountingRouter.post('/accounts/seed-syscohada', authorize('ADMIN', 'ACCOUNTANT'), ctrl.seedSyscohada);
+accountingRouter.post('/accounts', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'), ctrl.createAccount);
+accountingRouter.post('/accounts/seed-syscohada', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'), ctrl.seedSyscohada);
 accountingRouter.get('/accounts/:id', ctrl.getAccount);
-accountingRouter.patch('/accounts/:id', authorize('ADMIN', 'ACCOUNTANT'), ctrl.updateAccount);
+accountingRouter.patch('/accounts/:id', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'), ctrl.updateAccount);
 
 accountingRouter.get('/journals', ctrl.listJournals);
-accountingRouter.post('/journals', authorize('ADMIN', 'ACCOUNTANT'), ctrl.createJournal);
+accountingRouter.post('/journals', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'), ctrl.createJournal);
 
 accountingRouter.get('/entries', ctrl.listEntries);
-accountingRouter.post('/entries', authorize('ADMIN', 'ACCOUNTANT'), ctrl.createEntry);
+accountingRouter.post('/entries', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'), ctrl.createEntry);
 accountingRouter.get('/entries/:id', ctrl.getEntry);
-accountingRouter.patch('/entries/:id/post', authorize('ADMIN', 'ACCOUNTANT'), ctrl.postEntry);
-accountingRouter.delete('/entries/:id', authorize('ADMIN', 'ACCOUNTANT'), ctrl.deleteEntry);
+accountingRouter.patch('/entries/:id/post', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'), ctrl.postEntry);
+accountingRouter.delete('/entries/:id', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'), ctrl.deleteEntry);
 
 accountingRouter.get('/reports/trial-balance', ctrl.trialBalance);
 accountingRouter.get('/reports/balance-sheet', ctrl.balanceSheet);

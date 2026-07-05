@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CrmController } from './crm.controller';
-import { authenticate } from '../../middleware/auth.middleware';
+import { authenticate, authorize } from '../../middleware/auth.middleware';
 import { tenantMiddleware } from '../../middleware/tenant.middleware';
 import { subscriptionGuard } from '../../middleware/subscription.middleware';
 import { requireModule } from '../../middleware/plan.middleware';
@@ -8,7 +8,7 @@ import { requireModule } from '../../middleware/plan.middleware';
 export const crmRouter = Router();
 const ctrl = new CrmController();
 
-crmRouter.use(authenticate, tenantMiddleware, subscriptionGuard, requireModule('crm'));
+crmRouter.use(authenticate, tenantMiddleware, subscriptionGuard, requireModule('crm'), authorize('ADMIN', 'DIRECTOR', 'SALES', 'PROJECT_MANAGER'));
 
 crmRouter.get('/leads', ctrl.listLeads);
 crmRouter.post('/leads', ctrl.createLead);

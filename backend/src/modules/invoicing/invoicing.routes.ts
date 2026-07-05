@@ -20,10 +20,10 @@ invoicingRouter.get('/suppliers', requireModule('purchasing'), ctrl.listSupplier
 invoicingRouter.post('/suppliers', requireModule('purchasing'), ctrl.createSupplier);
 
 invoicingRouter.get('/', ctrl.listInvoices);
-invoicingRouter.post('/', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.createInvoice);
+invoicingRouter.post('/', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'SALES', 'CASHIER'), ctrl.createInvoice);
 invoicingRouter.get('/:id', ctrl.getInvoice);
-invoicingRouter.patch('/:id', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.updateInvoice);
-invoicingRouter.patch('/:id/send', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.sendInvoice);
-invoicingRouter.post('/:id/email', authorize('ADMIN', 'ACCOUNTANT', 'SALES'), ctrl.emailInvoice);
-invoicingRouter.post('/:id/payments', authorize('ADMIN', 'ACCOUNTANT'), ctrl.addPayment);
-invoicingRouter.delete('/:id', authorize('ADMIN', 'ACCOUNTANT'), ctrl.deleteInvoice);
+invoicingRouter.patch('/:id', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'SALES', 'CASHIER'), ctrl.updateInvoice);
+invoicingRouter.patch('/:id/send', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'SALES', 'CASHIER'), ctrl.sendInvoice);
+invoicingRouter.post('/:id/email', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'SALES', 'CASHIER'), ctrl.emailInvoice);
+invoicingRouter.post('/:id/payments', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'CASHIER'), ctrl.addPayment);
+invoicingRouter.delete('/:id', authorize('ADMIN', 'DIRECTOR', 'ACCOUNTANT'), ctrl.deleteInvoice);
