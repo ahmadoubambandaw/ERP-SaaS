@@ -4,13 +4,33 @@ import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
 import { planUserLimit } from '../../config/plans';
 
+const ROLES = ['ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'SALES', 'CASHIER', 'INVENTORY_MANAGER', 'HR_MANAGER', 'PROJECT_MANAGER', 'EMPLOYEE'] as const;
+
+// Profils métiers (au-delà d'Admin/Employé) : réservés à la formule Enterprise
+const ADVANCED_ROLES = ['DIRECTOR', 'ACCOUNTANT', 'SALES', 'CASHIER', 'INVENTORY_MANAGER', 'HR_MANAGER', 'PROJECT_MANAGER'];
+
 const createSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(['ADMIN', 'ACCOUNTANT', 'SALES', 'INVENTORY_MANAGER', 'HR_MANAGER', 'PROJECT_MANAGER', 'EMPLOYEE']).default('EMPLOYEE'),
+  role: z.enum(ROLES).default('EMPLOYEE'),
 });
+
+async function assertRoleAllowed(organizationId: string, role: string | undefined, requesterRole?: string) {
+  if (!role || !ADVANCED_ROLES.includes(role) || requesterRole === 'SUPER_ADMIN') return;
+  const org = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { plan: true },
+  });
+  if (org?.plan !== 'ENTERPRISE') {
+    throw new AppError(
+      'La gestion des rôles avancée (profils Directeur, Comptable, Commercial, Caissier, Magasinier, RH, Chef de projet) est réservée à la formule Enterprise.',
+      403,
+      'PLAN_UPGRADE_REQUIRED',
+    );
+  }
+}
 
 export class UsersService {
   async list(organizationId: string) {
@@ -21,8 +41,9 @@ export class UsersService {
     });
   }
 
-  async create(organizationId: string, body: unknown) {
+  async create(organizationId: string, body: unknown, requesterRole?: string) {
     const data = createSchema.parse(body);
+    await assertRoleAllowed(organizationId, data.role, requesterRole);
     const existing = await prisma.user.findUnique({
       where: { organizationId_email: { organizationId, email: data.email } },
     });
@@ -61,15 +82,16 @@ export class UsersService {
     return user;
   }
 
-  async update(organizationId: string, id: string, body: unknown) {
+  async update(organizationId: string, id: string, body: unknown, requesterRole?: string) {
     await this.getOne(organizationId, id);
     const data = z.object({
       firstName: z.string().min(1).optional(),
       lastName: z.string().min(1).optional(),
-      role: z.enum(['ADMIN', 'ACCOUNTANT', 'SALES', 'INVENTORY_MANAGER', 'HR_MANAGER', 'PROJECT_MANAGER', 'EMPLOYEE']).optional(),
+      role: z.enum(ROLES).optional(),
       isActive: z.boolean().optional(),
       password: z.string().min(8).optional(),
     }).parse(body);
+    await assertRoleAllowed(organizationId, data.role, requesterRole);
 
     const { password, ...rest } = data;
     return prisma.user.update({

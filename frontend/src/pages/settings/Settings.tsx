@@ -11,18 +11,9 @@ import { PLAN_LABELS, PLAN_PRICES, PAYMENT_NUMBER, PAYMENT_NAME, formatDateFr } 
 import { THEMES, applyTheme, getCurrentTheme } from '../../utils/theme';
 import { startCheckout } from '../../utils/checkout';
 
-const ROLE_LABELS: Record<string, string> = {
-  SUPER_ADMIN: 'Super Admin',
-  ADMIN: 'Administrateur',
-  ACCOUNTANT: 'Comptable',
-  SALES: 'Commercial',
-  INVENTORY_MANAGER: 'Gestionnaire de stock',
-  HR_MANAGER: 'Responsable RH',
-  PROJECT_MANAGER: 'Chef de projet',
-  EMPLOYEE: 'Employé',
-};
+import { ROLE_LABELS, ADVANCED_ROLES } from '../../utils/roles';
 
-const ASSIGNABLE_ROLES = ['ADMIN', 'ACCOUNTANT', 'SALES', 'INVENTORY_MANAGER', 'HR_MANAGER', 'PROJECT_MANAGER', 'EMPLOYEE'];
+const ASSIGNABLE_ROLES = ['ADMIN', 'DIRECTOR', 'ACCOUNTANT', 'SALES', 'CASHIER', 'INVENTORY_MANAGER', 'HR_MANAGER', 'PROJECT_MANAGER', 'EMPLOYEE'];
 
 interface UserFormData {
   firstName: string;
@@ -184,6 +175,13 @@ export default function SettingsPage() {
       }
     | undefined;
   const orgDetails: OrgDetails | undefined = orgData?.data?.data;
+  // Gestion des rôles avancée (profils métiers) : formule Enterprise uniquement
+  const rolesUnlocked = sub?.plan === 'ENTERPRISE' || isPlatformOwner;
+  const roleOption = (r: string) => (
+    <option key={r} value={r} disabled={!rolesUnlocked && ADVANCED_ROLES.includes(r)}>
+      {ROLE_LABELS[r]}{!rolesUnlocked && ADVANCED_ROLES.includes(r) ? ' — 🔒 Enterprise' : ''}
+    </option>
+  );
 
   const referralLink = sub?.referralCode
     ? `${window.location.origin}/register?ref=${sub.referralCode}`
@@ -520,8 +518,14 @@ export default function SettingsPage() {
               <div>
                 <label className="label">Rôle</label>
                 <select {...register('role')} className="input">
-                  {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                  {ASSIGNABLE_ROLES.map(roleOption)}
                 </select>
+                {!rolesUnlocked && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    🔒 Les profils métiers (Directeur, Comptable, Commercial, Caissier, Magasinier, RH, Chef de projet)
+                    sont inclus dans la formule <strong>Enterprise</strong>.
+                  </p>
+                )}
               </div>
               <div className="flex items-end justify-end gap-3">
                 <button type="button" onClick={() => { setShowForm(false); reset(); setErrorMsg(''); }} className="btn-secondary">
@@ -559,7 +563,7 @@ export default function SettingsPage() {
                       className="text-xs border border-gray-200 rounded-lg px-2 py-1.5"
                     >
                       {u.role === 'SUPER_ADMIN' && <option value="SUPER_ADMIN">Super Admin</option>}
-                      {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
+                      {ASSIGNABLE_ROLES.map(roleOption)}
                     </select>
                     <button
                       onClick={() => setResetPwFor(u)}

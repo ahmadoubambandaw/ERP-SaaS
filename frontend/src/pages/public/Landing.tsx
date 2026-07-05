@@ -91,7 +91,7 @@ const PLANS = [
     price: 'Sur mesure',
     period: '',
     desc: 'Pour les structures exigeantes',
-    features: ['Utilisateurs illimités', 'Tout Professional, plus :', 'Support prioritaire', 'Formation de vos équipes', 'Personnalisations'],
+    features: ['Utilisateurs illimités', 'Tout Professional, plus :', 'Gestion des rôles (profils métiers)', 'Support prioritaire', 'Formation de vos équipes', 'Personnalisations'],
     cta: 'Nous contacter',
     highlight: false,
   },

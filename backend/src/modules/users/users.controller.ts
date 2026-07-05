@@ -15,7 +15,7 @@ export class UsersController {
 
   create = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const user = await service.create(req.user!.organizationId, req.body);
+      const user = await service.create(req.user!.organizationId, req.body, req.user!.role);
       sendSuccess(res, user, 'Utilisateur cree', 201);
     } catch (err) { next(err); }
   };
@@ -29,7 +29,7 @@ export class UsersController {
 
   update = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const user = await service.update(req.user!.organizationId, req.params.id, req.body);
+      const user = await service.update(req.user!.organizationId, req.params.id, req.body, req.user!.role);
       sendSuccess(res, user);
     } catch (err) { next(err); }
   };

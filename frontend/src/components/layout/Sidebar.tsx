@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '../../store/auth.store';
 import { subscriptionService } from '../../services/api';
 import { planHasModule, PlanModule } from '../../utils/plans';
+import { roleHasModule } from '../../utils/roles';
 import { clsx } from 'clsx';
 import Logo from '../ui/Logo';
 
@@ -83,9 +84,12 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const plan = subData?.data?.data?.plan as string | undefined;
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
+  // Cloisonnement par profil métier : chaque rôle ne voit que ses modules
+  const roleItems = navItems.filter((item) => roleHasModule(user?.role, item.module));
+
   const items: NavItem[] = isSuperAdmin
-    ? [...navItems, { label: 'Fondateur', icon: Shield, to: '/admin' }]
-    : navItems;
+    ? [...roleItems, { label: 'Fondateur', icon: Shield, to: '/admin' }]
+    : roleItems;
 
   // Un module est verrouillé s'il n'est pas inclus dans la formule (sauf super admin)
   const isLocked = (item: NavItem): boolean =>
