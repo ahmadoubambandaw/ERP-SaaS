@@ -26,6 +26,7 @@ async function getPlan(orgId: string): Promise<string> {
 
 const MODULE_LABELS: Record<PlanModule, string> = {
   dashboard: 'Tableau de bord',
+  pos: 'Caisse (POS)',
   accounting: 'Comptabilité',
   invoicing: 'Facturation',
   inventory: 'Stocks',

@@ -26,6 +26,7 @@ import LandingPage from './pages/public/Landing';
 import SubscriptionExpiredPage from './pages/subscription/SubscriptionExpired';
 import PlatformAdminPage from './pages/admin/PlatformAdmin';
 import BillingReturnPage from './pages/billing/BillingReturn';
+import POSPage from './pages/pos/POS';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -69,6 +70,7 @@ export default function App() {
           }
         >
           <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="pos" element={<POSPage />} />
 
           <Route path="invoicing">
             <Route index element={<InvoicesPage />} />

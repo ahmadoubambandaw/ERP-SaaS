@@ -18,10 +18,10 @@ export const ADVANCED_ROLES = ['DIRECTOR', 'ACCOUNTANT', 'SALES', 'CASHIER', 'IN
 
 // Modules visibles par rôle (les rôles absents de cette liste voient tout)
 const ROLE_MODULES: Record<string, string[]> = {
-  ACCOUNTANT: ['dashboard', 'accounting', 'invoicing'],
-  SALES: ['dashboard', 'invoicing', 'crm', 'projects'],
-  CASHIER: ['dashboard', 'invoicing'],
-  INVENTORY_MANAGER: ['dashboard', 'inventory', 'purchasing'],
+  ACCOUNTANT: ['dashboard', 'accounting', 'invoicing', 'pos'],
+  SALES: ['dashboard', 'pos', 'invoicing', 'crm', 'projects'],
+  CASHIER: ['dashboard', 'pos', 'invoicing'],
+  INVENTORY_MANAGER: ['dashboard', 'pos', 'inventory', 'purchasing'],
   HR_MANAGER: ['dashboard', 'hr'],
   PROJECT_MANAGER: ['dashboard', 'projects', 'crm'],
   EMPLOYEE: ['dashboard'],

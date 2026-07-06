@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Receipt, Package, Users, Wallet } from 'lucide-react';
+import { ScanLine, Package, Users, Wallet } from 'lucide-react';
 
 /**
  * Accès rapide en gros boutons visuels (icône + couleur + 1 mot).
@@ -7,7 +7,7 @@ import { Receipt, Package, Users, Wallet } from 'lucide-react';
  * couleur mémorisable, texte minimal.
  */
 const ACTIONS = [
-  { to: '/invoicing/new', label: 'Vendre', hint: 'Nouvelle facture', icon: Receipt, from: 'from-emerald-500', to2: 'to-emerald-600' },
+  { to: '/pos', label: 'Vendre', hint: 'Caisse', icon: ScanLine, from: 'from-emerald-500', to2: 'to-emerald-600' },
   { to: '/invoicing', label: 'Factures', hint: 'Qui doit payer', icon: Wallet, from: 'from-blue-500', to2: 'to-blue-600' },
   { to: '/inventory', label: 'Produits', hint: 'Mon stock', icon: Package, from: 'from-violet-500', to2: 'to-violet-600' },
   { to: '/invoicing/customers', label: 'Clients', hint: 'Mes clients', icon: Users, from: 'from-amber-500', to2: 'to-amber-600' },

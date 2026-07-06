@@ -3,6 +3,7 @@
 
 export type PlanModule =
   | 'dashboard'
+  | 'pos'
   | 'accounting'
   | 'invoicing'
   | 'inventory'
@@ -11,7 +12,7 @@ export type PlanModule =
   | 'crm'
   | 'projects';
 
-const STARTER_MODULES: PlanModule[] = ['dashboard', 'accounting', 'invoicing', 'inventory'];
+const STARTER_MODULES: PlanModule[] = ['dashboard', 'pos', 'accounting', 'invoicing', 'inventory'];
 const PRO_MODULES: PlanModule[] = [...STARTER_MODULES, 'purchasing', 'hr', 'crm', 'projects'];
 
 export const PLAN_MODULES: Record<string, PlanModule[]> = {
