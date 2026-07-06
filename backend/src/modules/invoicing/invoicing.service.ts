@@ -2,6 +2,13 @@ import { prisma } from '../../utils/prisma';
 import { AppError } from '../../middleware/error.middleware';
 import { z } from 'zod';
 
+// Échappe le HTML des textes saisis par l'utilisateur avant insertion dans un email
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
+  ));
+}
+
 function clean(body: unknown): Record<string, unknown> {
   if (typeof body !== 'object' || body === null) return {};
   return Object.fromEntries(
@@ -203,7 +210,7 @@ export class InvoicingService {
         </div>
         <div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 12px 12px;padding:24px">
           <p>Bonjour,</p>
-          <p>${data.message ? data.message.replace(/\n/g, '<br/>') : `Veuillez trouver ci-joint votre ${docLabel.toLowerCase()} <strong>${inv.number}</strong> d'un montant de <strong>${total} ${inv.currency}</strong>.`}</p>
+          <p>${data.message ? escapeHtml(data.message).replace(/\n/g, '<br/>') : `Veuillez trouver ci-joint votre ${docLabel.toLowerCase()} <strong>${inv.number}</strong> d'un montant de <strong>${total} ${inv.currency}</strong>.`}</p>
           <p style="color:#6b7280;font-size:13px">Le document PDF est joint à cet email.</p>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0"/>
           <p style="color:#9ca3af;font-size:12px">${org?.name || ''}${org?.phone ? ' • ' + org.phone : ''}${org?.email ? ' • ' + org.email : ''}</p>
