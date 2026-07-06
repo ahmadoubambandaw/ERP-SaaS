@@ -17,32 +17,53 @@ export function CashLogo({ className = '' }: { className?: string }) {
 export function WaveLogo({ className = '' }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" className={className} aria-hidden>
-      {/* Pingouin Wave */}
-      <path d="M24 4C15.2 4 9.5 12 9.5 23S15.8 44 24 44s14.5-10 14.5-21S32.8 4 24 4Z" fill="#0B2E4E" />
-      <path d="M24 13c-5.2 0-8.8 4.8-8.8 11.5S18.8 40.8 24 40.8s8.8-9.6 8.8-16.3S29.2 13 24 13Z" fill="#fff" />
-      <circle cx="19" cy="12.6" r="2.1" fill="#fff" />
-      <circle cx="19.5" cy="12.6" r="1" fill="#0B2E4E" />
-      <path d="M22.6 15.2l6-1.7-3.8 4.1z" fill="#F6A21E" />
-      <path d="M17.5 43.6l3.2-2.2 2 2.6zM30.5 43.6l-3.2-2.2-2 2.6z" fill="#F6A21E" />
+      {/* Pingouin Wave : de face, noir, aile levée qui salue */}
+      {/* aile levée (gauche) */}
+      <path d="M17.5 20C13 18 9.8 13.5 10.3 8.8c4.6 1 8.3 4.8 9.6 9.4z" fill="#141414" />
+      {/* corps */}
+      <path d="M26.5 5.5c-6.6 0-11 4.8-11 12v13.5c0 6.8 4.6 11.5 11 11.5s11-4.7 11-11.5V17.5c0-7.2-4.4-12-11-12z" fill="#141414" />
+      {/* ventre blanc */}
+      <ellipse cx="26.5" cy="30.5" rx="6.8" ry="9.5" fill="#fff" />
+      {/* yeux */}
+      <circle cx="23" cy="13.5" r="2.5" fill="#fff" />
+      <circle cx="30" cy="13.5" r="2.5" fill="#fff" />
+      <circle cx="23.4" cy="14" r="1.15" fill="#141414" />
+      <circle cx="29.6" cy="14" r="1.15" fill="#141414" />
+      {/* bec */}
+      <path d="M22.5 18h8c-.5 2.4-2 3.7-4 3.7s-3.5-1.3-4-3.7z" fill="#F58220" />
+      {/* pattes */}
+      <ellipse cx="22" cy="43" rx="3.6" ry="1.9" fill="#F58220" />
+      <ellipse cx="31" cy="43" rx="3.6" ry="1.9" fill="#F58220" />
     </svg>
   );
 }
 
 export function MaxItLogo({ className = '' }: { className?: string }) {
   return (
-    <svg viewBox="0 0 96 40" className={className} aria-hidden>
+    <svg viewBox="0 0 96 44" className={className} aria-hidden>
+      {/* Wordmark Max it : « Max » noir, « it » blanc, mention SN */}
       <text
-        x="48" y="27"
+        x="48" y="25"
         textAnchor="middle"
         fontFamily="Arial, Helvetica, sans-serif"
         fontWeight="800"
-        fontSize="24"
+        fontSize="25"
         letterSpacing="-0.5"
-        fill="#fff"
       >
-        max it
+        <tspan fill="#141414">Max</tspan>
+        <tspan fill="#fff"> it</tspan>
       </text>
-      <rect x="20" y="32" width="56" height="3" rx="1.5" fill="#fff" opacity="0.9" />
+      <text
+        x="48" y="39"
+        textAnchor="middle"
+        fontFamily="Arial, Helvetica, sans-serif"
+        fontWeight="700"
+        fontSize="10.5"
+        letterSpacing="1"
+        fill="#141414"
+      >
+        SN
+      </text>
     </svg>
   );
 }

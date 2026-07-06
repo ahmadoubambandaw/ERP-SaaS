@@ -42,7 +42,7 @@ const METHODS: {
   bg: string;
 }[] = [
   { id: 'CASH', label: 'Espèces', logo: CashLogo, bg: '#0E9F6E' },
-  { id: 'WAVE', label: 'Wave', logo: WaveLogo, bg: '#00B9F1' },
+  { id: 'WAVE', label: 'Wave', logo: WaveLogo, bg: '#5BC0EF' },
   { id: 'ORANGE_MONEY', label: 'Orange Money', logo: MaxItLogo, bg: '#FF7900' },
   { id: 'BANK_TRANSFER', label: 'Carte bancaire', logo: CardLogo, bg: '#1F2A5A' },
 ];
