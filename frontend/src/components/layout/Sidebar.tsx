@@ -12,6 +12,7 @@ import { planHasModule, PlanModule } from '../../utils/plans';
 import { roleHasModule } from '../../utils/roles';
 import { clsx } from 'clsx';
 import Logo from '../ui/Logo';
+import CompanySwitcher from './CompanySwitcher';
 
 interface NavItem {
   label: string;
@@ -105,18 +106,16 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
   const nav = (
     <>
       <div className="flex items-center justify-between p-4 border-b border-gray-700">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            {organization?.logo ? (
-              <img src={organization.logo} alt="" className="w-8 h-8 rounded-lg object-contain bg-white" />
-            ) : (
-              <Logo className="w-8 h-8" />
-            )}
-            <div>
-              <p className="text-sm font-bold leading-none">{organization?.name || 'Naatal'}</p>
-              <p className="text-xs text-gray-400">{organization?.currency}</p>
-            </div>
+        {!collapsed ? (
+          <div className="min-w-0 flex-1 mr-2">
+            <CompanySwitcher />
           </div>
+        ) : (
+          organization?.logo ? (
+            <img src={organization.logo} alt="" className="w-8 h-8 rounded-lg object-contain bg-white" />
+          ) : (
+            <Logo className="w-8 h-8" />
+          )
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}

@@ -29,8 +29,12 @@ model Organization {
   email            String?
   taxId            String?
   fiscalYear       Int       @default(1)
+  parentOrganizationId String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+
+  parentOrganization Organization?  @relation("OrgGroup", fields: [parentOrganizationId], references: [id])
+  childOrganizations Organization[] @relation("OrgGroup")
 
   users                User[]
   accounts             Account[]

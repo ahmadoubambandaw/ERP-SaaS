@@ -158,6 +158,12 @@ export const billingService = {
   verify: () => api.post('/billing/verify'),
 };
 
+export const companiesService = {
+  list: () => api.get('/companies'),
+  create: (data: { name: string; currency?: string; country?: string }) => api.post('/companies', data),
+  switch: (id: string) => api.post(`/companies/${id}/switch`),
+};
+
 export const posService = {
   catalog: () => api.get('/pos/catalog'),
   summary: () => api.get('/pos/summary'),
