@@ -205,42 +205,42 @@ export default function POS() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:h-[calc(100vh-8rem)]">
+    <div className="flex flex-col lg:flex-row gap-4 lg:h-full lg:overflow-hidden">
       {/* ----- Catalogue ----- */}
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-2">
           <div className="relative flex-1">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un produit ou scanner…"
-              className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 text-base"
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-gray-300 focus:ring-2 focus:ring-primary-500 text-sm"
             />
           </div>
           <button
             onClick={() => setScanOpen(true)}
-            className="flex items-center gap-2 px-4 py-3 rounded-xl bg-gray-900 text-white font-medium"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium"
             title="Scanner avec la caméra"
           >
-            <ScanLine className="w-5 h-5" />
+            <ScanLine className="w-4 h-4" />
             <span className="hidden sm:inline">Scanner</span>
           </button>
           <button
             onClick={() => setSummaryOpen(true)}
-            className="flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium"
+            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 text-sm font-medium"
             title="Rapport de caisse du jour (Z)"
           >
-            <BarChart3 className="w-5 h-5" />
+            <BarChart3 className="w-4 h-4" />
             <span className="hidden sm:inline">Journée</span>
           </button>
         </div>
 
         {categories.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-2 mb-1">
+          <div className="flex gap-1.5 overflow-x-auto pb-1.5 mb-1">
             <button
               onClick={() => setCategory(null)}
-              className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${!category ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+              className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${!category ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'}`}
             >
               Tout
             </button>
@@ -248,7 +248,7 @@ export default function POS() {
               <button
                 key={c}
                 onClick={() => setCategory(c === category ? null : c)}
-                className={`px-4 py-1.5 rounded-full text-sm whitespace-nowrap ${category === c ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+                className={`px-3 py-1 rounded-full text-xs whitespace-nowrap ${category === c ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               >
                 {c}
               </button>
@@ -265,28 +265,28 @@ export default function POS() {
               <p>Aucun produit. Ajoutez des produits dans Stocks.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-2">
               {filtered.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => addProduct(p)}
-                  className="group text-left bg-white rounded-2xl border border-gray-200 overflow-hidden hover:border-primary-400 hover:shadow-md transition active:scale-95"
+                  className="group text-left bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-primary-400 hover:shadow-md transition active:scale-95"
                 >
-                  <div className="aspect-square w-full relative">
+                  <div className="h-16 sm:h-20 w-full relative">
                     {p.image ? (
                       <img src={p.image} alt="" className="w-full h-full object-cover" />
                     ) : (
                       <div className={`w-full h-full flex items-center justify-center ${tileColor(p.name)}`}>
-                        <span className="text-white text-3xl font-bold">{p.name.charAt(0).toUpperCase()}</span>
+                        <span className="text-white text-xl font-bold">{p.name.charAt(0).toUpperCase()}</span>
                       </div>
                     )}
-                    <div className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-white/90 text-primary-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                      <Plus className="w-4 h-4" />
+                    <div className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/90 text-primary-700 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
+                      <Plus className="w-3.5 h-3.5" />
                     </div>
                   </div>
-                  <div className="p-2">
-                    <p className="text-sm font-medium line-clamp-2 leading-tight min-h-[2.5rem]">{p.name}</p>
-                    <p className="text-base font-bold text-primary-700 mt-1">{formatCurrency(p.salePrice, currency)}</p>
+                  <div className="px-1.5 py-1">
+                    <p className="text-[11px] font-medium line-clamp-2 leading-tight min-h-[1.7rem]">{p.name}</p>
+                    <p className="text-xs font-bold text-primary-700">{formatCurrency(p.salePrice, currency)}</p>
                   </div>
                 </button>
               ))}
@@ -296,7 +296,7 @@ export default function POS() {
       </div>
 
       {/* ----- Panier (desktop) ----- */}
-      <div className="hidden lg:flex w-96 flex-col bg-white rounded-2xl border border-gray-200 shadow-sm">
+      <div className="hidden lg:flex w-80 flex-shrink-0 flex-col bg-white rounded-2xl border border-gray-200 shadow-sm min-h-0">
         <CartPanel
           cart={cart}
           currency={currency}
@@ -389,8 +389,8 @@ function CartPanel({
 }) {
   return (
     <>
-      <div className="flex items-center justify-between p-4 border-b border-gray-100">
-        <h2 className="font-bold text-lg flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h2 className="font-bold flex items-center gap-2">
           <ShoppingCart className="w-5 h-5 text-primary-600" /> Panier
         </h2>
         <div className="flex items-center gap-2">
@@ -430,15 +430,15 @@ function CartPanel({
         )}
       </div>
 
-      <div className="p-4 border-t border-gray-100">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-gray-500">Total</span>
-          <span className="text-2xl font-extrabold text-gray-900">{formatCurrency(total, currency)}</span>
+      <div className="px-4 py-3 border-t border-gray-100">
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-gray-500 text-sm">Total</span>
+          <span className="text-xl font-extrabold text-gray-900">{formatCurrency(total, currency)}</span>
         </div>
         <button
           disabled={cart.length === 0}
           onClick={onCheckout}
-          className="w-full py-4 rounded-2xl bg-primary-600 text-white font-bold text-lg disabled:opacity-40 active:scale-[0.98] transition"
+          className="w-full py-3 rounded-xl bg-primary-600 text-white font-bold disabled:opacity-40 active:scale-[0.98] transition"
         >
           Encaisser
         </button>
