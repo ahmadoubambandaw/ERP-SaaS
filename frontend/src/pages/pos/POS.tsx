@@ -6,6 +6,7 @@ import {
   Printer, Check, ShoppingCart, Camera, Delete, BarChart3, Receipt,
 } from 'lucide-react';
 import { CashLogo, WaveLogo, MaxItLogo, CardLogo } from '../../components/ui/PayLogos';
+import BarcodeScanner from '../../components/ui/BarcodeScanner';
 import QRCode from 'qrcode';
 import { posService, organizationService } from '../../services/api';
 import { useAuthStore } from '../../store/auth.store';
@@ -363,7 +364,7 @@ export default function POS() {
 
       {/* ----- Scanner caméra ----- */}
       {scanOpen && (
-        <CameraScanner
+        <BarcodeScanner
           onClose={() => setScanOpen(false)}
           onDetected={(code) => { setScanOpen(false); handleScanned(code); }}
         />
@@ -892,85 +893,6 @@ function SummaryModal({
           </button>
         </>
       )}
-    </Modal>
-  );
-}
-
-// ==================== Scanner caméra ====================
-function CameraScanner({ onClose, onDetected }: { onClose: () => void; onDetected: (code: string) => void }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [manual, setManual] = useState('');
-
-  useEffect(() => {
-    let stream: MediaStream | null = null;
-    let raf = 0;
-    let stopped = false;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const BD = (window as any).BarcodeDetector;
-
-    async function start() {
-      if (!BD || !navigator.mediaDevices?.getUserMedia) {
-        setError('La caméra du navigateur ne prend pas en charge le scan. Saisissez le code.');
-        return;
-      }
-      try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const detector = new BD({ formats: ['ean_13', 'ean_8', 'code_128', 'upc_a', 'upc_e', 'qr_code'] });
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          await videoRef.current.play();
-        }
-        const tick = async () => {
-          if (stopped || !videoRef.current) return;
-          try {
-            const codes = await detector.detect(videoRef.current);
-            if (codes && codes.length) {
-              onDetected(codes[0].rawValue);
-              return;
-            }
-          } catch { /* ignore frame errors */ }
-          raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-      } catch {
-        setError("Impossible d'accéder à la caméra. Saisissez le code.");
-      }
-    }
-    start();
-    return () => {
-      stopped = true;
-      cancelAnimationFrame(raf);
-      stream?.getTracks().forEach((t) => t.stop());
-    };
-  }, [onDetected]);
-
-  return (
-    <Modal onClose={onClose} title="Scanner un code-barres">
-      {!error ? (
-        <div className="rounded-xl overflow-hidden bg-black aspect-video mb-3 relative">
-          <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
-          <div className="absolute inset-x-8 top-1/2 h-0.5 bg-red-500/80" />
-        </div>
-      ) : (
-        <p className="text-sm text-gray-500 mb-3 flex items-center gap-2">
-          <Camera className="w-4 h-4" /> {error}
-        </p>
-      )}
-      <form
-        onSubmit={(e) => { e.preventDefault(); if (manual.trim()) onDetected(manual.trim()); }}
-        className="flex gap-2"
-      >
-        <input
-          value={manual}
-          onChange={(e) => setManual(e.target.value)}
-          placeholder="Saisir le code-barres…"
-          autoFocus
-          className="flex-1 px-3 py-3 rounded-xl border border-gray-300"
-        />
-        <button type="submit" className="px-5 rounded-xl bg-primary-600 text-white font-medium">OK</button>
-      </form>
     </Modal>
   );
 }
