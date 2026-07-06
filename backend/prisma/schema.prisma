@@ -30,6 +30,9 @@ model Organization {
   taxId            String?
   fiscalYear       Int       @default(1)
   parentOrganizationId String?
+  // Encaissement caisse : lien marchand Wave + numéro Mobile Money affichés au client
+  wavePaymentLink   String?
+  mobileMoneyNumber String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 

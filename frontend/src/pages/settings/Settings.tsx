@@ -29,6 +29,8 @@ interface OrgFormData {
   phone: string;
   email: string;
   taxId: string;
+  wavePaymentLink: string;
+  mobileMoneyNumber: string;
 }
 
 interface OrgDetails extends OrgFormData {
@@ -204,6 +206,8 @@ export default function SettingsPage() {
         phone: orgDetails.phone || '',
         email: orgDetails.email || '',
         taxId: orgDetails.taxId || '',
+        wavePaymentLink: orgDetails.wavePaymentLink || '',
+        mobileMoneyNumber: orgDetails.mobileMoneyNumber || '',
       });
     }
   }, [orgDetails, orgReset]);
@@ -407,6 +411,37 @@ export default function SettingsPage() {
           <div>
             <label className="label">Email</label>
             <input {...orgRegister('email')} type="email" disabled={!isAdmin} className="input disabled:bg-gray-50" placeholder="contact@entreprise.com" />
+          </div>
+          <div className="sm:col-span-2 border-t border-gray-100 pt-4 mt-1">
+            <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-primary-600" /> Encaissement caisse (Wave / Orange Money)
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="label">Lien de paiement Wave</label>
+                <input
+                  {...orgRegister('wavePaymentLink')}
+                  disabled={!isAdmin}
+                  className="input disabled:bg-gray-50"
+                  placeholder="https://pay.wave.com/m/..."
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Dans Wave Business : Mon QR → Partager → copier le lien. La caisse affichera un QR avec le montant pré-rempli.
+                </p>
+              </div>
+              <div>
+                <label className="label">Numéro Mobile Money</label>
+                <input
+                  {...orgRegister('mobileMoneyNumber')}
+                  disabled={!isAdmin}
+                  className="input disabled:bg-gray-50"
+                  placeholder="77 000 00 00"
+                />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  Affiché au client à la caisse pour Wave / Orange Money si vous n'avez pas de lien.
+                </p>
+              </div>
+            </div>
           </div>
           <div className="sm:col-span-2 flex items-center justify-between pt-1">
             <p className="text-xs text-gray-400">
