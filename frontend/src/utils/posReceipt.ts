@@ -123,7 +123,100 @@ export function buildReceiptHtml(d: ReceiptData): string {
 }
 
 export function printReceipt(d: ReceiptData): void {
-  const html = buildReceiptHtml(d);
+  printHtmlDocument(buildReceiptHtml(d));
+}
+
+// ==================== Z de caisse (rapport de journée) ====================
+
+export interface ZReportData {
+  org: ReceiptOrg;
+  date: Date | string;
+  count: number;
+  total: number;
+  byMethod: Record<string, number>;
+  currency: string;
+  cashier?: string | null;
+}
+
+const METHOD_LABELS: Record<string, string> = {
+  CASH: 'Espèces',
+  WAVE: 'Wave',
+  ORANGE_MONEY: 'Orange Money',
+  BANK_TRANSFER: 'Carte bancaire',
+  MTN_MONEY: 'MTN Money',
+  FREE_MONEY: 'Free Money',
+  MOOV_MONEY: 'Moov Money',
+  CHECK: 'Chèque',
+};
+
+export function methodLabel(method: string): string {
+  return METHOD_LABELS[method] || method;
+}
+
+export function buildZReportHtml(d: ZReportData): string {
+  const dt = new Date(d.date);
+  const dateStr = dt.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  const printedAt = new Date().toLocaleString('fr-FR', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+
+  const methodRows = Object.entries(d.byMethod)
+    .sort(([, a], [, b]) => b - a)
+    .map(([m, amt]) => `<tr><td>${esc(methodLabel(m))}</td><td class="r">${money(amt, d.currency)}</td></tr>`)
+    .join('');
+
+  return `<!doctype html>
+<html><head><meta charset="utf-8"/>
+<style>
+  @page { size: 80mm auto; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    width: 80mm;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #000;
+    padding: 4mm 3mm 6mm;
+    line-height: 1.4;
+  }
+  .center { text-align: center; }
+  .r { text-align: right; }
+  .shop { font-size: 15px; font-weight: bold; }
+  .title { font-size: 14px; font-weight: bold; margin-top: 4px; }
+  .muted { font-size: 10px; }
+  hr { border: none; border-top: 1px dashed #000; margin: 6px 0; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 1px 0; vertical-align: top; }
+  .grand td { font-size: 15px; font-weight: bold; padding-top: 4px; }
+</style></head>
+<body>
+  <div class="center">
+    <div class="shop">${esc(d.org.name || 'Boutique')}</div>
+    <div class="title">RAPPORT DE CAISSE (Z)</div>
+    <div class="muted">${esc(dateStr)}</div>
+  </div>
+  <hr/>
+  <table>
+    <tr><td>Nombre de ventes</td><td class="r"><b>${d.count}</b></td></tr>
+    <tr class="grand"><td>TOTAL ENCAISSÉ</td><td class="r">${money(d.total, d.currency)}</td></tr>
+  </table>
+  <hr/>
+  <div><b>Par moyen de paiement</b></div>
+  <table>${methodRows || '<tr><td class="muted" colspan="2">Aucune vente</td></tr>'}</table>
+  <hr/>
+  ${d.cashier ? `<div class="muted">Édité par : ${esc(d.cashier)}</div>` : ''}
+  <div class="muted">Imprimé le ${esc(printedAt)}</div>
+  <div class="center muted" style="margin-top:6px">Naatal · by Ndaw-Tech</div>
+</body></html>`;
+}
+
+export function printZReport(d: ZReportData): void {
+  printHtmlDocument(buildZReportHtml(d));
+}
+
+// ==================== Impression via iframe cachée ====================
+
+function printHtmlDocument(html: string): void {
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
   iframe.style.right = '0';
@@ -141,6 +234,10 @@ export function printReceipt(d: ReceiptData): void {
   doc.open();
   doc.write(html);
   doc.close();
+  triggerPrint(iframe);
+}
+
+function triggerPrint(iframe: HTMLIFrameElement): void {
 
   let printed = false;
   const trigger = () => {

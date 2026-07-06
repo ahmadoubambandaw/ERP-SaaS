@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   Search, ScanLine, Plus, Minus, Trash2, X, Banknote, Smartphone,
-  CreditCard, Printer, Check, ShoppingCart, Camera, Delete,
+  CreditCard, Printer, Check, ShoppingCart, Camera, Delete, BarChart3, Receipt,
 } from 'lucide-react';
 import { posService } from '../../services/api';
 import { useAuthStore } from '../../store/auth.store';
 import { formatCurrency } from '../../utils/format';
-import { printReceipt, ReceiptData } from '../../utils/posReceipt';
+import { printReceipt, printZReport, methodLabel, ReceiptData } from '../../utils/posReceipt';
 
 interface PosProduct {
   id: string;
@@ -68,6 +68,7 @@ export default function POS() {
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [cartOpen, setCartOpen] = useState(false); // mobile drawer
   const [scanOpen, setScanOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -225,6 +226,14 @@ export default function POS() {
             <ScanLine className="w-5 h-5" />
             <span className="hidden sm:inline">Scanner</span>
           </button>
+          <button
+            onClick={() => setSummaryOpen(true)}
+            className="flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-300 bg-white text-gray-700 font-medium"
+            title="Rapport de caisse du jour (Z)"
+          >
+            <BarChart3 className="w-5 h-5" />
+            <span className="hidden sm:inline">Journée</span>
+          </button>
         </div>
 
         {categories.length > 0 && (
@@ -350,6 +359,16 @@ export default function POS() {
         <CameraScanner
           onClose={() => setScanOpen(false)}
           onDetected={(code) => { setScanOpen(false); handleScanned(code); }}
+        />
+      )}
+
+      {/* ----- Z de caisse ----- */}
+      {summaryOpen && (
+        <SummaryModal
+          currency={currency}
+          orgName={organization?.name || null}
+          cashier={user ? `${user.firstName} ${user.lastName}` : null}
+          onClose={() => setSummaryOpen(false)}
         />
       )}
     </div>
@@ -542,6 +561,108 @@ function ReceiptModal({ receipt, currency, onClose }: { receipt: ReceiptData; cu
           Nouvelle vente
         </button>
       </div>
+    </Modal>
+  );
+}
+
+// ==================== Z de caisse (rapport de journée) ====================
+const METHOD_COLORS: Record<string, string> = {
+  CASH: 'bg-emerald-500',
+  WAVE: 'bg-sky-500',
+  ORANGE_MONEY: 'bg-orange-500',
+  BANK_TRANSFER: 'bg-indigo-500',
+};
+
+function SummaryModal({
+  currency, orgName, cashier, onClose,
+}: {
+  currency: string;
+  orgName: string | null;
+  cashier: string | null;
+  onClose: () => void;
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['pos-summary'],
+    queryFn: () => posService.summary(),
+    refetchOnMount: 'always',
+    staleTime: 0,
+  });
+  const summary = data?.data?.data as
+    | { date: string; count: number; total: number; byMethod: Record<string, number> }
+    | undefined;
+
+  const dateStr = new Date().toLocaleDateString('fr-FR', {
+    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+  });
+
+  return (
+    <Modal onClose={onClose} title="Journée de caisse">
+      <p className="text-center text-sm text-gray-500 capitalize -mt-1 mb-4">{dateStr}</p>
+
+      {isLoading || !summary ? (
+        <p className="text-center text-gray-400 py-10">Chargement…</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="bg-gray-50 rounded-2xl p-4 text-center">
+              <Receipt className="w-5 h-5 mx-auto mb-1 text-gray-400" />
+              <p className="text-2xl font-extrabold">{summary.count}</p>
+              <p className="text-xs text-gray-500">Vente{summary.count > 1 ? 's' : ''}</p>
+            </div>
+            <div className="bg-primary-50 rounded-2xl p-4 text-center">
+              <Banknote className="w-5 h-5 mx-auto mb-1 text-primary-500" />
+              <p className="text-xl font-extrabold text-primary-700 leading-tight">
+                {formatCurrency(summary.total, currency)}
+              </p>
+              <p className="text-xs text-gray-500">Encaissé</p>
+            </div>
+          </div>
+
+          <p className="text-sm font-semibold mb-2">Par moyen de paiement</p>
+          {Object.keys(summary.byMethod).length === 0 ? (
+            <p className="text-sm text-gray-400 mb-4">Aucune vente aujourd'hui.</p>
+          ) : (
+            <div className="space-y-2 mb-4">
+              {Object.entries(summary.byMethod)
+                .sort(([, a], [, b]) => b - a)
+                .map(([m, amt]) => {
+                  const pct = summary.total > 0 ? (amt / summary.total) * 100 : 0;
+                  return (
+                    <div key={m}>
+                      <div className="flex items-center justify-between text-sm mb-0.5">
+                        <span className="font-medium">{methodLabel(m)}</span>
+                        <span className="font-bold">{formatCurrency(amt, currency)}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${METHOD_COLORS[m] || 'bg-gray-400'}`}
+                          style={{ width: `${Math.max(pct, 3)}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
+
+          <button
+            onClick={() =>
+              printZReport({
+                org: { name: orgName },
+                date: summary.date,
+                count: summary.count,
+                total: summary.total,
+                byMethod: summary.byMethod,
+                currency,
+                cashier,
+              })
+            }
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gray-900 text-white font-bold"
+          >
+            <Printer className="w-5 h-5" /> Imprimer le rapport Z
+          </button>
+        </>
+      )}
     </Modal>
   );
 }
