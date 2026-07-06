@@ -1,7 +1,7 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, FileText, Package, Users, BarChart2, ShoppingCart,
-  FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp, X, Shield, Lock,
+  FolderKanban, Settings, ChevronLeft, ChevronRight, Building2, TrendingUp, X, Shield, Lock, ScanLine,
 } from 'lucide-react';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -23,6 +23,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Tableau de bord', icon: LayoutDashboard, to: '/dashboard' },
+  { label: 'Caisse (POS)', icon: ScanLine, to: '/pos', module: 'pos' },
   { label: 'Comptabilite', icon: BarChart2, to: '/accounting', module: 'accounting' },
   {
     label: 'Facturation', icon: FileText, to: '/invoicing', module: 'invoicing',

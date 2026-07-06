@@ -158,6 +158,12 @@ export const billingService = {
   verify: () => api.post('/billing/verify'),
 };
 
+export const posService = {
+  catalog: () => api.get('/pos/catalog'),
+  summary: () => api.get('/pos/summary'),
+  sale: (data: unknown) => api.post('/pos/sale', data),
+};
+
 export const demoService = {
   status: () => api.get('/demo'),
   seed: () => api.post('/demo/seed'),
