@@ -11,18 +11,27 @@ const COUNTRIES = [{ code: 'SN', label: 'Senegal' }, { code: 'CI', label: "Cote 
 
 const PLANS = [
   {
+    id: 'CAISSE',
+    name: 'Caisse',
+    price: '5 000',
+    period: 'F CFA / mois',
+    desc: 'La caisse du boutiquier — 170 F/jour',
+    features: ['1 utilisateur', 'Caisse tactile & scan code-barres', 'Encaissement Wave, OM, espèces', 'Produits, stock & clients', 'Factures & tickets'],
+    highlight: false,
+  },
+  {
     id: 'STARTER',
     name: 'Starter',
-    price: '15 000',
+    price: '10 000',
     period: 'F CFA / mois',
-    desc: 'Pour démarrer sereinement',
-    features: ['3 utilisateurs', 'Facturation & Devis', 'Comptabilité SYSCOHADA', 'Gestion des stocks', 'Application mobile'],
+    desc: 'Pour gérer sereinement',
+    features: ['3 utilisateurs', 'Tout Caisse, plus :', 'Facturation & Devis complets', 'Comptabilité SYSCOHADA', 'Application mobile'],
     highlight: false,
   },
   {
     id: 'PROFESSIONAL',
     name: 'Professional',
-    price: '25 000',
+    price: '20 000',
     period: 'F CFA / mois',
     desc: 'Pour les PME qui grandissent',
     features: ['10 utilisateurs', 'Tout Starter, plus :', 'RH & Paie complète', 'CRM & pipeline commercial', 'Achats & fournisseurs', 'Gestion de projets'],
@@ -34,7 +43,7 @@ const PLANS = [
     price: 'Sur devis',
     period: '',
     desc: 'Pour les structures exigeantes',
-    features: ['Utilisateurs illimités', 'Tout Professional, plus :', 'Support prioritaire', 'Formation des équipes'],
+    features: ['Utilisateurs illimités', 'Tout Professional, plus :', 'Multi-entreprises', 'Profils par métier', 'Support prioritaire'],
     highlight: false,
   },
 ];
@@ -77,11 +86,11 @@ export default function RegisterPage() {
             <Logo className="w-14 h-14 mx-auto mb-3" />
             <h1 className="text-2xl md:text-3xl font-bold text-white">Choisissez votre formule</h1>
             <div className="inline-flex items-center gap-2 mt-3 bg-green-500/20 text-green-300 text-sm font-medium px-4 py-1.5 rounded-full">
-              <Gift className="w-4 h-4" /> 7 jours d'essai gratuit · sans carte bancaire
+              <Gift className="w-4 h-4" /> 30 jours d'essai gratuit · sans carte bancaire
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
             {PLANS.map((p) => (
               <div
                 key={p.id}
@@ -109,7 +118,7 @@ export default function RegisterPage() {
                   onClick={() => { setSelectedPlan(p.id); setStep('form'); }}
                   className={`mt-6 w-full py-2.5 rounded-lg font-medium text-sm transition-colors ${p.highlight ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                 >
-                  Créer gratuitement · 7 jours
+                  Créer gratuitement · 30 jours
                 </button>
               </div>
             ))}
@@ -137,7 +146,7 @@ export default function RegisterPage() {
           <div className="flex items-center justify-between mb-5 p-3 bg-primary-50 border border-primary-100 rounded-xl">
             <div className="flex items-center gap-2 text-sm">
               <Gift className="w-4 h-4 text-primary-600" />
-              <span className="text-gray-600">Formule <strong className="text-gray-900">{plan.name}</strong> — 7 jours gratuits</span>
+              <span className="text-gray-600">Formule <strong className="text-gray-900">{plan.name}</strong> — 30 jours gratuits</span>
             </div>
             <button onClick={() => setStep('plan')} className="text-xs text-primary-600 hover:underline flex items-center gap-1">
               <ArrowLeft className="w-3 h-3" /> Changer
@@ -203,12 +212,12 @@ export default function RegisterPage() {
             <div>
               <label className="label">Code de parrainage <span className="text-gray-400 font-normal">(optionnel)</span></label>
               <input {...register('referralCode')} defaultValue={referralCode} className="input" placeholder="NA-XXXXX" />
-              {referralCode && <p className="text-xs text-green-600 mt-1">🎁 Code appliqué — 7 jours d'essai bonus (21 jours au total) !</p>}
+              {referralCode && <p className="text-xs text-green-600 mt-1">🎁 Code appliqué — 15 jours d'essai bonus (45 jours au total) !</p>}
             </div>
 
             <button type="submit" disabled={loading} className="btn-primary w-full flex items-center justify-center gap-2 py-3">
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              Commencer mes 7 jours gratuits
+              Commencer mes 30 jours gratuits
             </button>
           </form>
 

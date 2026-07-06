@@ -13,7 +13,7 @@ const registerSchema = z.object({
   lastName: z.string().min(1),
   email: z.string().email(),
   password: z.string().min(8),
-  plan: z.enum(['STARTER', 'PROFESSIONAL', 'ENTERPRISE']).default('STARTER'),
+  plan: z.enum(['CAISSE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE']).default('STARTER'),
   referralCode: z.string().trim().min(3).max(20).optional(),
 });
 
@@ -50,9 +50,9 @@ export class AuthService {
 
     const hashedPassword = await hashPassword(data.password);
 
-    // Parrainage : code du parrain -> +7 jours d'essai bonus pour le filleul
+    // Parrainage : code du parrain -> +15 jours d'essai bonus pour le filleul
     let referredById: string | undefined;
-    let trialDays = 7;
+    let trialDays = 30;
     if (data.referralCode) {
       const referrer = await prisma.organization.findUnique({
         where: { referralCode: data.referralCode.toUpperCase() },
@@ -60,7 +60,7 @@ export class AuthService {
       });
       if (referrer) {
         referredById = referrer.id;
-        trialDays = 14;
+        trialDays = 45;
       }
     }
 
@@ -75,7 +75,7 @@ export class AuthService {
         plan: data.plan,
         referralCode,
         referredById,
-        // Essai gratuit (7 jours, ou 14 avec un code de parrainage)
+        // Essai gratuit (30 jours, ou 45 avec un code de parrainage)
         planExpiresAt: new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000),
         users: {
           create: {

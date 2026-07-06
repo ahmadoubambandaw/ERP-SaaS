@@ -30,6 +30,7 @@ function isConfigured(): boolean {
 }
 
 const PLAN_LABELS: Record<string, string> = {
+  CAISSE: 'Caisse',
   STARTER: 'Starter',
   PROFESSIONAL: 'Professional',
   ENTERPRISE: 'Enterprise',

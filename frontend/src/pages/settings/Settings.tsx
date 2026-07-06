@@ -190,7 +190,7 @@ export default function SettingsPage() {
     : '';
   const shareReferral = () => {
     const msg = `Je gère mon activité avec Naatal (facturation, stock, compta...) et je te le recommande 👌\n`
-      + `Inscris-toi avec mon code ${sub?.referralCode} et gagne 7 jours d'essai bonus :\n${referralLink}`;
+      + `Inscris-toi avec mon code ${sub?.referralCode} et gagne 15 jours d'essai bonus :\n${referralLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
   };
   const copyReferral = () => {
@@ -731,7 +731,7 @@ export default function SettingsPage() {
           </div>
           <p className="text-sm text-gray-500 mb-5">
             Invitez d'autres entrepreneurs. Dès qu'un filleul s'abonne, vous gagnez{' '}
-            <strong>{sub.rewardMonths || 1} mois offert</strong> — et lui reçoit 7 jours d'essai bonus.
+            <strong>{sub.rewardMonths || 1} mois offert</strong> — et lui reçoit 15 jours d'essai bonus.
           </p>
 
           <div className="grid grid-cols-2 gap-4 mb-5">

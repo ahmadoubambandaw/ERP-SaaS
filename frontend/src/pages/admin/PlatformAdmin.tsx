@@ -169,7 +169,7 @@ export default function PlatformAdminPage() {
   }
 
   const dist = stats?.planDistribution || {};
-  const distTotal = Math.max(1, (dist.STARTER || 0) + (dist.PROFESSIONAL || 0) + (dist.ENTERPRISE || 0));
+  const distTotal = Math.max(1, (dist.CAISSE || 0) + (dist.STARTER || 0) + (dist.PROFESSIONAL || 0) + (dist.ENTERPRISE || 0));
 
   return (
     <div className="space-y-6">
@@ -274,7 +274,7 @@ export default function PlatformAdminPage() {
             </span>
           </div>
           <div className="space-y-3">
-            {(['STARTER', 'PROFESSIONAL', 'ENTERPRISE'] as const).map((p) => {
+            {(['CAISSE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE'] as const).map((p) => {
               const count = dist[p] || 0;
               const pct = Math.round((count / distTotal) * 100);
               return (

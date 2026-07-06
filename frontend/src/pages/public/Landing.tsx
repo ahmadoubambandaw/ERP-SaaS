@@ -15,7 +15,7 @@ const WHATSAPP_MSG = encodeURIComponent('Bonjour, je souhaite en savoir plus sur
 const FAQ: { q: string; a: string }[] = [
   {
     q: 'Combien coûte Naatal ?',
-    a: "Vous commencez avec 7 jours d'essai gratuit, sans carte bancaire. Ensuite, l'abonnement démarre à 15 000 F CFA/mois (formule Starter) et 25 000 F CFA/mois (Professional). Sans engagement : vous arrêtez quand vous voulez.",
+    a: "Vous commencez avec 30 jours d'essai gratuit, sans carte bancaire. Ensuite, l'abonnement démarre à 5 000 F CFA/mois (formule Caisse — soit 170 F par jour), 10 000 F CFA/mois (Starter) ou 20 000 F CFA/mois (Professional). Sans engagement : vous arrêtez quand vous voulez.",
   },
   {
     q: 'Est-ce que ça marche sur mon téléphone ?',
@@ -104,21 +104,30 @@ const FEATURES = [
 
 const PLANS = [
   {
-    name: 'Starter',
-    price: '15 000',
+    name: 'Caisse',
+    price: '5 000',
     period: 'F CFA / mois',
-    desc: 'Pour démarrer sereinement',
-    features: ['3 utilisateurs', 'Facturation illimitée', 'Comptabilité SYSCOHADA', 'Gestion des stocks', 'Application mobile (PWA)'],
-    cta: 'Commencer gratuitement',
+    desc: 'La caisse du boutiquier — 170 F/jour',
+    features: ['1 utilisateur', 'Caisse tactile & scan code-barres', 'Encaissement Wave, Orange Money, espèces', 'Produits, stock & clients', 'Factures & tickets'],
+    cta: 'Essayer 30 jours gratuits',
+    highlight: false,
+  },
+  {
+    name: 'Starter',
+    price: '10 000',
+    period: 'F CFA / mois',
+    desc: 'Pour gérer sereinement',
+    features: ['3 utilisateurs', 'Tout Caisse, plus :', 'Facturation & devis illimités', 'Comptabilité SYSCOHADA', 'Application mobile (PWA)'],
+    cta: 'Essayer 30 jours gratuits',
     highlight: false,
   },
   {
     name: 'Professional',
-    price: '25 000',
+    price: '20 000',
     period: 'F CFA / mois',
     desc: 'Pour les PME qui grandissent',
-    features: ['10 utilisateurs', 'Tout Starter, plus :', 'RH & Paie complète', 'CRM & pipeline commercial', 'Gestion de projets', 'Export Excel & PDF'],
-    cta: 'Essayer 7 jours gratuits',
+    features: ['10 utilisateurs', 'Tout Starter, plus :', 'RH & Paie complète', 'CRM & pipeline commercial', 'Achats & gestion de projets', 'Export Excel & PDF'],
+    cta: 'Essayer 30 jours gratuits',
     highlight: true,
   },
   {
@@ -126,7 +135,7 @@ const PLANS = [
     price: 'Sur mesure',
     period: '',
     desc: 'Pour les structures exigeantes',
-    features: ['Utilisateurs illimités', 'Tout Professional, plus :', 'Gestion des rôles (profils métiers)', 'Support prioritaire', 'Formation de vos équipes', 'Personnalisations'],
+    features: ['Utilisateurs illimités', 'Tout Professional, plus :', 'Multi-entreprises (plusieurs boutiques)', 'Gestion des rôles (profils métiers)', 'Support prioritaire', 'Formation de vos équipes'],
     cta: 'Nous contacter',
     highlight: false,
   },
@@ -363,9 +372,9 @@ export default function LandingPage() {
       <section id="tarifs" className="max-w-6xl mx-auto px-4 md:px-6 py-20">
         <div className="text-center mb-14">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Des tarifs simples et justes</h2>
-          <p className="text-gray-500 mt-3">Payez en F CFA, annulez quand vous voulez.</p>
+          <p className="text-gray-500 mt-3">À partir de 170 F par jour. Payez en F CFA, annulez quand vous voulez.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {PLANS.map((plan) => (
             <div
               key={plan.name}

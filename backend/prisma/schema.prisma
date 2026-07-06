@@ -60,6 +60,7 @@ model Organization {
 }
 
 enum Plan {
+  CAISSE
   STARTER
   PROFESSIONAL
   ENTERPRISE
