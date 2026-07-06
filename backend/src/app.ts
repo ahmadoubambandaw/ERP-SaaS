@@ -24,16 +24,24 @@ import { prisma } from './utils/prisma';
 
 const app = express();
 
+// Derrière le proxy Railway : nécessaire pour que req.ip (et donc les limites
+// par IP) corresponde au client réel et non au proxy.
+app.set('trust proxy', 1);
+
 app.use(helmet());
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
   .map((o) => o.trim());
 
+// Uniquement les déploiements Vercel DU projet (production + previews),
+// pas n'importe quel site *.vercel.app.
+const VERCEL_PROJECT_RE = /^https:\/\/erp-saa-s[a-z0-9.-]*\.vercel\.app$/;
+
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    if (VERCEL_PROJECT_RE.test(origin)) return callback(null, true);
     if (origin === 'http://localhost:5173' || origin === 'http://localhost:3000') return callback(null, true);
     callback(new Error(`CORS: origin ${origin} not allowed`));
   },
@@ -50,6 +58,22 @@ const limiter = rateLimit({
   message: { error: 'Trop de requêtes, réessayez dans 15 minutes.' },
 });
 app.use('/api', limiter);
+
+// Anti force-brute : seules les tentatives de connexion ÉCHOUÉES comptent,
+// les utilisateurs légitimes derrière une même IP ne sont donc pas bloqués.
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: true,
+  message: { success: false, error: 'Trop de tentatives de connexion. Réessayez dans 15 minutes.' },
+});
+const registerLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  message: { success: false, error: 'Trop de créations de compte depuis cette adresse. Réessayez plus tard.' },
+});
+app.use('/api/v1/auth/login', loginLimiter);
+app.use('/api/v1/auth/register', registerLimiter);
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), version: '1.0.0' });
