@@ -62,6 +62,15 @@ export default function App() {
             </PrivateRoute>
           }
         />
+        {/* La caisse est une app à part entière : plein écran, sans le gabarit Naatal */}
+        <Route
+          path="/pos"
+          element={
+            <PrivateRoute>
+              <POSPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           element={
             <PrivateRoute>
@@ -70,7 +79,6 @@ export default function App() {
           }
         >
           <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="pos" element={<POSPage />} />
 
           <Route path="invoicing">
             <Route index element={<InvoicesPage />} />
