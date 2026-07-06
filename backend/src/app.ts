@@ -19,6 +19,7 @@ import { subscriptionRouter } from './modules/subscription/subscription.routes';
 import { billingRouter } from './modules/billing/billing.routes';
 import { demoRouter } from './modules/demo/demo.routes';
 import { posRouter } from './modules/pos/pos.routes';
+import { companiesRouter } from './modules/companies/companies.routes';
 import { prisma } from './utils/prisma';
 
 const app = express();
@@ -69,6 +70,7 @@ app.use(`${api}/subscription`, subscriptionRouter);
 app.use(`${api}/billing`, billingRouter);
 app.use(`${api}/demo`, demoRouter);
 app.use(`${api}/pos`, posRouter);
+app.use(`${api}/companies`, companiesRouter);
 
 app.use(errorMiddleware);
 
