@@ -323,7 +323,7 @@ export default function POS() {
 
       {/* ----- Panier drawer (mobile) ----- */}
       {cartOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 flex flex-col justify-end">
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
           <div className="relative bg-white rounded-t-3xl max-h-[85vh] flex flex-col pb-[env(safe-area-inset-bottom)]">
             <CartPanel
