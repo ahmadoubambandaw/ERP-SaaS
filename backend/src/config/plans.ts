@@ -12,10 +12,13 @@ export type PlanModule =
   | 'crm'
   | 'projects';
 
-const STARTER_MODULES: PlanModule[] = ['dashboard', 'pos', 'accounting', 'invoicing', 'inventory'];
+// Caisse : la porte d'entrée du boutiquier — vente au comptoir, stock, clients, factures
+const CAISSE_MODULES: PlanModule[] = ['dashboard', 'pos', 'invoicing', 'inventory'];
+const STARTER_MODULES: PlanModule[] = [...CAISSE_MODULES, 'accounting'];
 const PRO_MODULES: PlanModule[] = [...STARTER_MODULES, 'purchasing', 'hr', 'crm', 'projects'];
 
 export const PLAN_MODULES: Record<string, PlanModule[]> = {
+  CAISSE: CAISSE_MODULES,
   STARTER: STARTER_MODULES,
   PROFESSIONAL: PRO_MODULES,
   ENTERPRISE: PRO_MODULES,
@@ -23,6 +26,7 @@ export const PLAN_MODULES: Record<string, PlanModule[]> = {
 
 // Nombre maximum d'utilisateurs par organisation (0 = illimité)
 export const PLAN_USER_LIMITS: Record<string, number> = {
+  CAISSE: 1,
   STARTER: 3,
   PROFESSIONAL: 10,
   ENTERPRISE: 0,
@@ -38,6 +42,7 @@ export function planUserLimit(plan: string): number {
 
 // Prix mensuel par formule (XOF) pour le paiement en ligne
 export const PLAN_PRICE_XOF: Record<string, number> = {
-  STARTER: 15000,
-  PROFESSIONAL: 25000,
+  CAISSE: 5000,
+  STARTER: 10000,
+  PROFESSIONAL: 20000,
 };

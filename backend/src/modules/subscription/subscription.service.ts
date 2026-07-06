@@ -139,7 +139,7 @@ export class SubscriptionService {
     const mrr = payingActive.reduce((s, o) => s + (PLAN_PRICE_XOF[o.plan] || 0), 0);
 
     // Répartition par formule (clients uniquement)
-    const planDistribution: Record<string, number> = { STARTER: 0, PROFESSIONAL: 0, ENTERPRISE: 0 };
+    const planDistribution: Record<string, number> = { CAISSE: 0, STARTER: 0, PROFESSIONAL: 0, ENTERPRISE: 0 };
     clientOrgs.forEach((o) => { planDistribution[o.plan] = (planDistribution[o.plan] || 0) + 1; });
 
     // Nouveaux comptes ce mois-ci
@@ -329,7 +329,7 @@ export class SubscriptionService {
 
   async updateOrganization(id: string, body: unknown) {
     const data = z.object({
-      plan: z.enum(['STARTER', 'PROFESSIONAL', 'ENTERPRISE']).optional(),
+      plan: z.enum(['CAISSE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE']).optional(),
       months: z.number().int().min(1).max(36).optional(),
       unlimited: z.boolean().optional(),
       suspend: z.boolean().optional(),

@@ -14,6 +14,8 @@ export async function ensureSchema(): Promise<void> {
     // Caisse : coordonnées d'encaissement Wave / Mobile Money du commerçant
     'ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "wavePaymentLink" TEXT',
     'ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS "mobileMoneyNumber" TEXT',
+    // Nouvelle formule d'entrée de gamme « Caisse » (5 000 F/mois)
+    'ALTER TYPE "Plan" ADD VALUE IF NOT EXISTS \'CAISSE\' BEFORE \'STARTER\'',
   ];
 
   for (const sql of statements) {
