@@ -19,6 +19,9 @@ const updateSchema = z.object({
   taxId: z.string().max(50).optional(),
   currency: z.string().length(3).optional(),
   country: z.string().length(2).optional(),
+  // Encaissement caisse : lien marchand Wave + numéro Mobile Money
+  wavePaymentLink: z.string().max(300).url('Lien Wave invalide').optional(),
+  mobileMoneyNumber: z.string().max(30).optional(),
   // data URL, resized client-side; hard cap ~500KB
   logo: z.string().max(500_000).regex(/^data:image\/(png|jpe?g|webp);base64,/, 'Format de logo invalide').nullable().optional(),
 });
@@ -30,6 +33,7 @@ export class OrganizationService {
       select: {
         id: true, name: true, slug: true, country: true, currency: true,
         language: true, address: true, phone: true, email: true, taxId: true, logo: true,
+        wavePaymentLink: true, mobileMoneyNumber: true,
       },
     });
     if (!org) throw new AppError('Organisation introuvable', 404);
@@ -47,6 +51,7 @@ export class OrganizationService {
       select: {
         id: true, name: true, slug: true, country: true, currency: true,
         language: true, address: true, phone: true, email: true, taxId: true, logo: true,
+        wavePaymentLink: true, mobileMoneyNumber: true,
       },
     });
   }

@@ -6,7 +6,8 @@ import {
   Printer, Check, ShoppingCart, Camera, Delete, BarChart3, Receipt,
 } from 'lucide-react';
 import { CashLogo, WaveLogo, MaxItLogo, CardLogo } from '../../components/ui/PayLogos';
-import { posService } from '../../services/api';
+import QRCode from 'qrcode';
+import { posService, organizationService } from '../../services/api';
 import { useAuthStore } from '../../store/auth.store';
 import { formatCurrency } from '../../utils/format';
 import { printReceipt, printZReport, methodLabel, ReceiptData } from '../../utils/posReceipt';
@@ -462,18 +463,19 @@ function TenderModal({
   onClose: () => void;
   onConfirm: (method: Method, label: string, amountReceived: number | null) => void;
 }) {
-  const [method, setMethod] = useState<{ id: Method; label: string } | null>(null);
-  const [received, setReceived] = useState('');
-  const receivedNum = parseInt(received || '0', 10) || 0;
-  const change = receivedNum - total;
+  const [step, setStep] = useState<Method | null>(null);
 
-  function press(v: string) {
-    if (v === 'C') return setReceived('');
-    if (v === '⌫') return setReceived((s) => s.slice(0, -1));
-    setReceived((s) => (s + v).slice(0, 12));
-  }
+  // Coordonnées d'encaissement du commerçant (lien Wave, numéro Mobile Money)
+  const { data: orgData } = useQuery({
+    queryKey: ['organization'],
+    queryFn: () => organizationService.get(),
+  });
+  const org = orgData?.data?.data as
+    | { name?: string; phone?: string; wavePaymentLink?: string; mobileMoneyNumber?: string }
+    | undefined;
+  const momoNumber = org?.mobileMoneyNumber || org?.phone || '';
 
-  if (!method) {
+  if (!step) {
     return (
       <Modal onClose={onClose} title="Paiement">
         <p className="text-center text-3xl font-extrabold mb-5">{formatCurrency(total, currency)}</p>
@@ -483,10 +485,7 @@ function TenderModal({
             return (
               <button
                 key={m.id}
-                onClick={() => {
-                  if (m.id === 'CASH') setMethod({ id: m.id, label: m.label });
-                  else onConfirm(m.id, m.label, null);
-                }}
+                onClick={() => setStep(m.id)}
                 style={{ backgroundColor: m.bg }}
                 className="flex flex-col items-center justify-center gap-2.5 py-6 rounded-2xl text-white font-bold active:scale-95 transition shadow-sm"
               >
@@ -500,9 +499,60 @@ function TenderModal({
     );
   }
 
-  // Cash : saisie du montant reçu + rendu monnaie
+  const back = () => setStep(null);
+  if (step === 'CASH') {
+    return <CashStep total={total} currency={currency} onClose={onClose} onBack={back} onConfirm={onConfirm} />;
+  }
+  if (step === 'WAVE') {
+    return (
+      <WaveStep
+        total={total} currency={currency} onClose={onClose} onBack={back}
+        waveLink={org?.wavePaymentLink} number={momoNumber}
+        onConfirm={() => onConfirm('WAVE', 'Wave', null)}
+      />
+    );
+  }
+  if (step === 'ORANGE_MONEY') {
+    return (
+      <MobileMoneyStep
+        title="Orange Money" accent="#FF7900"
+        total={total} currency={currency} onClose={onClose} onBack={back}
+        number={momoNumber}
+        hint="Le client envoie le montant sur ce numéro depuis Max it ou en composant #144#."
+        onConfirm={() => onConfirm('ORANGE_MONEY', 'Orange Money', null)}
+      />
+    );
+  }
   return (
-    <Modal onClose={onClose} title="Espèces" onBack={() => setMethod(null)}>
+    <CardStep
+      total={total} currency={currency} onClose={onClose} onBack={back}
+      onConfirm={() => onConfirm('BANK_TRANSFER', 'Carte bancaire', null)}
+    />
+  );
+}
+
+// ---- Espèces : pavé numérique + rendu monnaie ----
+function CashStep({
+  total, currency, onClose, onBack, onConfirm,
+}: {
+  total: number;
+  currency: string;
+  onClose: () => void;
+  onBack: () => void;
+  onConfirm: (method: Method, label: string, amountReceived: number | null) => void;
+}) {
+  const [received, setReceived] = useState('');
+  const receivedNum = parseInt(received || '0', 10) || 0;
+  const change = receivedNum - total;
+
+  function press(v: string) {
+    if (v === 'C') return setReceived('');
+    if (v === '⌫') return setReceived((s) => s.slice(0, -1));
+    setReceived((s) => (s + v).slice(0, 12));
+  }
+
+  return (
+    <Modal onClose={onClose} title="Espèces" onBack={onBack}>
       <div className="text-center mb-3">
         <p className="text-sm text-gray-500">À payer</p>
         <p className="text-2xl font-extrabold">{formatCurrency(total, currency)}</p>
@@ -540,6 +590,178 @@ function TenderModal({
         className="w-full py-4 rounded-2xl bg-emerald-600 text-white font-bold text-lg disabled:opacity-40 active:scale-[0.98]"
       >
         Valider la vente
+      </button>
+    </Modal>
+  );
+}
+
+// ---- Wave : QR à scanner par le client + ouverture de l'app ----
+function WaveStep({
+  total, currency, onClose, onBack, onConfirm, waveLink, number,
+}: {
+  total: number;
+  currency: string;
+  onClose: () => void;
+  onBack: () => void;
+  onConfirm: () => void;
+  waveLink?: string;
+  number?: string;
+}) {
+  const [qr, setQr] = useState<string | null>(null);
+
+  // Lien marchand Wave avec le montant pré-rempli
+  const payUrl = waveLink
+    ? `${waveLink}${waveLink.includes('?') ? '&' : '?'}amount=${Math.round(total)}`
+    : null;
+
+  useEffect(() => {
+    if (!payUrl) return;
+    QRCode.toDataURL(payUrl, { width: 480, margin: 1, color: { dark: '#0B2E4E' } })
+      .then(setQr)
+      .catch(() => setQr(null));
+  }, [payUrl]);
+
+  return (
+    <Modal onClose={onClose} title="Wave" onBack={onBack}>
+      <div className="text-center mb-3">
+        <p className="text-sm text-gray-500">À payer</p>
+        <p className="text-3xl font-extrabold" style={{ color: '#00A5E0' }}>{formatCurrency(total, currency)}</p>
+      </div>
+
+      {payUrl ? (
+        <>
+          <div className="flex flex-col items-center mb-3">
+            {qr && <img src={qr} alt="QR Wave" className="w-52 h-52 rounded-xl border border-gray-200" />}
+            <p className="text-sm text-gray-600 text-center mt-2">
+              Le client <b>scanne ce QR avec son app Wave</b> — le montant est déjà rempli.
+            </p>
+          </div>
+          <a
+            href={payUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-bold mb-3"
+            style={{ backgroundColor: '#5BC0EF' }}
+          >
+            <WaveLogo className="h-6" /> Ouvrir Wave
+          </a>
+        </>
+      ) : (
+        <div className="bg-sky-50 border border-sky-100 rounded-xl p-4 mb-3 text-center">
+          {number ? (
+            <>
+              <p className="text-sm text-gray-600 mb-1">Le client envoie le montant par Wave au&nbsp;:</p>
+              <p className="text-2xl font-extrabold tracking-wide">{number}</p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-600">
+              Ajoutez votre <b>lien de paiement Wave</b> ou votre numéro dans{' '}
+              <b>Paramètres → Entreprise</b> pour afficher un QR à scanner.
+            </p>
+          )}
+        </div>
+      )}
+
+      <button
+        onClick={onConfirm}
+        className="w-full py-4 rounded-2xl bg-emerald-600 text-white font-bold text-lg active:scale-[0.98]"
+      >
+        ✓ Paiement reçu — valider
+      </button>
+      <p className="text-[11px] text-gray-400 text-center mt-2">
+        Validez uniquement après avoir reçu la notification Wave.
+      </p>
+    </Modal>
+  );
+}
+
+// ---- Orange Money / autre mobile money : numéro + raccourci USSD ----
+function MobileMoneyStep({
+  title, accent, total, currency, onClose, onBack, onConfirm, number, hint,
+}: {
+  title: string;
+  accent: string;
+  total: number;
+  currency: string;
+  onClose: () => void;
+  onBack: () => void;
+  onConfirm: () => void;
+  number?: string;
+  hint: string;
+}) {
+  return (
+    <Modal onClose={onClose} title={title} onBack={onBack}>
+      <div className="text-center mb-3">
+        <p className="text-sm text-gray-500">À payer</p>
+        <p className="text-3xl font-extrabold" style={{ color: accent }}>{formatCurrency(total, currency)}</p>
+      </div>
+
+      <div className="rounded-xl p-4 mb-3 text-center border" style={{ backgroundColor: `${accent}14`, borderColor: `${accent}33` }}>
+        {number ? (
+          <>
+            <p className="text-sm text-gray-600 mb-1">Numéro du marchand&nbsp;:</p>
+            <p className="text-2xl font-extrabold tracking-wide">{number}</p>
+          </>
+        ) : (
+          <p className="text-sm text-gray-600">
+            Ajoutez votre <b>numéro Mobile Money</b> dans <b>Paramètres → Entreprise</b> pour l'afficher ici.
+          </p>
+        )}
+        <p className="text-xs text-gray-500 mt-2">{hint}</p>
+      </div>
+
+      <a
+        href="tel:%23144%23"
+        className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-white font-bold mb-3"
+        style={{ backgroundColor: accent }}
+      >
+        Composer #144#
+      </a>
+
+      <button
+        onClick={onConfirm}
+        className="w-full py-4 rounded-2xl bg-emerald-600 text-white font-bold text-lg active:scale-[0.98]"
+      >
+        ✓ Paiement reçu — valider
+      </button>
+      <p className="text-[11px] text-gray-400 text-center mt-2">
+        Validez uniquement après avoir reçu le SMS / la notification de réception.
+      </p>
+    </Modal>
+  );
+}
+
+// ---- Carte bancaire : encaissement sur TPE ----
+function CardStep({
+  total, currency, onClose, onBack, onConfirm,
+}: {
+  total: number;
+  currency: string;
+  onClose: () => void;
+  onBack: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <Modal onClose={onClose} title="Carte bancaire" onBack={onBack}>
+      <div className="text-center mb-4">
+        <p className="text-sm text-gray-500">À encaisser sur votre TPE</p>
+        <p className="text-3xl font-extrabold text-[#1F2A5A]">{formatCurrency(total, currency)}</p>
+      </div>
+      <div className="flex justify-center mb-4">
+        <div className="rounded-2xl p-5" style={{ backgroundColor: '#1F2A5A' }}>
+          <CardLogo className="h-14" />
+        </div>
+      </div>
+      <ol className="text-sm text-gray-600 space-y-1.5 mb-4 list-decimal list-inside">
+        <li>Saisissez <b>{formatCurrency(total, currency)}</b> sur votre terminal de paiement.</li>
+        <li>Le client insère ou approche sa carte.</li>
+        <li>Attendez le ticket « <b>Transaction acceptée</b> ».</li>
+      </ol>
+      <button
+        onClick={onConfirm}
+        className="w-full py-4 rounded-2xl bg-emerald-600 text-white font-bold text-lg active:scale-[0.98]"
+      >
+        ✓ Paiement accepté — valider
       </button>
     </Modal>
   );
