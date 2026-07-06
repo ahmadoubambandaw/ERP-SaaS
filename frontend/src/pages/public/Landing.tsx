@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import {
   Building2, BarChart2, FileText, Package, Users, TrendingUp, FolderKanban,
   Smartphone, ShieldCheck, Globe, Check, ArrowRight, Menu, X, Star, MessageCircle,
-  Store, Utensils, Wrench, Sparkles,
+  Store, Utensils, Wrench, Sparkles, ChevronDown, HelpCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 import Logo from '../../components/ui/Logo';
@@ -11,6 +11,41 @@ import AudioGuide from '../../components/ui/AudioGuide';
 // Numéro WhatsApp de contact (format international sans +)
 const WHATSAPP = '221774140900';
 const WHATSAPP_MSG = encodeURIComponent('Bonjour, je souhaite en savoir plus sur votre ERP pour ma PME.');
+
+const FAQ: { q: string; a: string }[] = [
+  {
+    q: 'Combien coûte Naatal ?',
+    a: "Vous commencez avec 7 jours d'essai gratuit, sans carte bancaire. Ensuite, l'abonnement démarre à 15 000 F CFA/mois (formule Starter) et 25 000 F CFA/mois (Professional). Sans engagement : vous arrêtez quand vous voulez.",
+  },
+  {
+    q: 'Est-ce que ça marche sur mon téléphone ?',
+    a: "Oui. Naatal fonctionne sur téléphone, tablette et ordinateur, sans rien installer depuis un store : ouvrez le site, touchez « Ajouter à l'écran d'accueil » et Naatal devient une application sur votre téléphone.",
+  },
+  {
+    q: 'Puis-je encaisser avec Wave et Orange Money ?',
+    a: "Oui. La caisse intégrée gère les paiements en Espèces, Wave, Orange Money et carte bancaire. Pour Wave, un QR code avec le montant déjà rempli s'affiche : votre client le scanne et paie en quelques secondes.",
+  },
+  {
+    q: 'Mes données sont-elles en sécurité ?',
+    a: "Oui. Connexions chiffrées (HTTPS), mots de passe illisibles même par nous, sauvegardes automatiques, et chaque entreprise est strictement cloisonnée : personne d'autre ne peut voir vos chiffres. Vos données vous appartiennent et vous pouvez les exporter à tout moment.",
+  },
+  {
+    q: 'Mes vendeurs peuvent-ils avoir un accès limité ?',
+    a: "Oui. Vous créez des profils par métier — Caissier, Comptable, Commercial, Magasinier, RH… — et chacun ne voit que ce qui le concerne. Le caissier encaisse, mais ne voit pas votre comptabilité.",
+  },
+  {
+    q: 'Je gère plusieurs boutiques, c\'est possible ?',
+    a: "Oui, avec la formule Entreprise : vous créez vos différentes boutiques ou sociétés et passez de l'une à l'autre avec le même compte, chacune avec ses propres stocks, ventes et comptabilité.",
+  },
+  {
+    q: "Faut-il savoir bien lire ou être comptable pour l'utiliser ?",
+    a: "Non. Naatal est pensé pour les commerçants : gros boutons visuels, photos des produits, vente en 3 gestes (toucher le produit → encaisser → ticket). La comptabilité SYSCOHADA se remplit automatiquement derrière.",
+  },
+  {
+    q: 'Et si j\'ai un problème ?',
+    a: "Le support se fait directement sur WhatsApp, en français ou en wolof. Touchez le bouton vert en bas de la page et on vous répond rapidement.",
+  },
+];
 
 const TESTIMONIALS = [
   {
@@ -99,6 +134,7 @@ const PLANS = [
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState<number | null>(0);
 
   return (
     <div className="min-h-screen bg-white">
@@ -113,6 +149,7 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-8 text-sm text-gray-600">
             <a href="#fonctionnalites" className="hover:text-gray-900">Fonctionnalités</a>
             <a href="#tarifs" className="hover:text-gray-900">Tarifs</a>
+            <a href="#faq" className="hover:text-gray-900">FAQ</a>
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
@@ -133,6 +170,7 @@ export default function LandingPage() {
           <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3">
             <a href="#fonctionnalites" onClick={() => setMenuOpen(false)} className="block text-gray-600">Fonctionnalités</a>
             <a href="#tarifs" onClick={() => setMenuOpen(false)} className="block text-gray-600">Tarifs</a>
+            <a href="#faq" onClick={() => setMenuOpen(false)} className="block text-gray-600">FAQ</a>
             <div className="flex gap-3 pt-2">
               <Link to="/login" className="btn-secondary flex-1 text-center">Se connecter</Link>
               <Link to="/register" className="btn-primary flex-1 text-center">Essai gratuit</Link>
@@ -362,6 +400,42 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ===== FAQ ===== */}
+      <section id="faq" className="bg-gray-50 border-y border-gray-100">
+        <div className="max-w-3xl mx-auto px-4 md:px-6 py-20">
+          <div className="text-center mb-10">
+            <HelpCircle className="w-8 h-8 text-primary-600 mx-auto mb-3" />
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Questions fréquentes</h2>
+            <p className="text-gray-500 mt-2">Tout ce que les commerçants nous demandent avant de se lancer.</p>
+          </div>
+          <div className="space-y-3">
+            {FAQ.map((item, i) => {
+              const open = faqOpen === i;
+              return (
+                <div key={i} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <button
+                    onClick={() => setFaqOpen(open ? null : i)}
+                    className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
+                  >
+                    <span className="font-semibold text-gray-900">{item.q}</span>
+                    <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+                  </button>
+                  {open && (
+                    <p className="px-5 pb-4 text-[15px] leading-relaxed text-gray-600">{item.a}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-center text-sm text-gray-500 mt-8">
+            Une autre question ?{' '}
+            <a href={`https://wa.me/${WHATSAPP}?text=${WHATSAPP_MSG}`} target="_blank" rel="noreferrer" className="text-primary-600 font-medium">
+              Écrivez-nous sur WhatsApp
+            </a>
+          </p>
+        </div>
+      </section>
+
       {/* ===== CTA ===== */}
       <section className="bg-gray-900">
         <div className="max-w-6xl mx-auto px-4 md:px-6 py-16 text-center">
@@ -391,6 +465,8 @@ export default function LandingPage() {
             <FolderKanban className="hidden" />
             <a href="#fonctionnalites" className="hover:text-gray-600">Fonctionnalités</a>
             <a href="#tarifs" className="hover:text-gray-600">Tarifs</a>
+            <a href="#faq" className="hover:text-gray-600">FAQ</a>
+            <Link to="/confidentialite" className="hover:text-gray-600">Confidentialité</Link>
             <Link to="/login" className="hover:text-gray-600">Connexion</Link>
           </div>
           <p>© {new Date().getFullYear()} Naatal · Ndaw-Tech — Fait au Sénégal 🇸🇳</p>
