@@ -23,6 +23,7 @@ import LeavesPage from './pages/hr/Leaves';
 import SuppliersPage from './pages/purchasing/Suppliers';
 import PurchaseOrdersPage from './pages/purchasing/PurchaseOrders';
 import LandingPage from './pages/public/Landing';
+import PrivacyPage from './pages/public/Privacy';
 import SubscriptionExpiredPage from './pages/subscription/SubscriptionExpired';
 import PlatformAdminPage from './pages/admin/PlatformAdmin';
 import BillingReturnPage from './pages/billing/BillingReturn';
@@ -44,6 +45,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomeGate />} />
+        <Route path="/confidentialite" element={<PrivacyPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route
