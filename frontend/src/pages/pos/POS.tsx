@@ -311,7 +311,7 @@ export default function POS() {
       {cart.length > 0 && (
         <button
           onClick={() => setCartOpen(true)}
-          className="lg:hidden fixed bottom-4 left-4 right-4 z-30 flex items-center justify-between px-5 py-4 rounded-2xl bg-primary-600 text-white shadow-lg"
+          className="lg:hidden fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] left-4 right-4 z-30 flex items-center justify-between px-5 py-4 rounded-2xl bg-primary-600 text-white shadow-lg"
         >
           <span className="flex items-center gap-2 font-medium">
             <ShoppingCart className="w-5 h-5" />
@@ -325,7 +325,7 @@ export default function POS() {
       {cartOpen && (
         <div className="lg:hidden fixed inset-0 z-40 flex flex-col justify-end">
           <div className="absolute inset-0 bg-black/50" onClick={() => setCartOpen(false)} />
-          <div className="relative bg-white rounded-t-3xl max-h-[85vh] flex flex-col">
+          <div className="relative bg-white rounded-t-3xl max-h-[85vh] flex flex-col pb-[env(safe-area-inset-bottom)]">
             <CartPanel
               cart={cart}
               currency={currency}
@@ -756,7 +756,7 @@ function Modal({ children, onClose, title, onBack }: {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 sm:m-4 max-h-[92vh] overflow-y-auto">
+      <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:m-4 sm:pb-5 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           {onBack ? (
             <button onClick={onBack} className="text-sm text-primary-600 font-medium">‹ Retour</button>

@@ -236,6 +236,7 @@ export default function Sidebar({ mobileOpen = false, onClose }: SidebarProps) {
       <aside
         className={clsx(
           'bg-gray-900 text-white flex flex-col transition-all duration-300',
+          'pt-[env(safe-area-inset-top)]',
           'fixed inset-y-0 left-0 z-50 w-72 transform',
           mobileOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:static lg:translate-x-0 lg:min-h-screen',
