@@ -90,83 +90,88 @@ export class PosService {
     const number = await this.generateNumber(orgId);
     const now = new Date();
 
-    const invoice = await prisma.$transaction(async (tx) => {
-      const inv = await tx.invoice.create({
-        data: {
-          organizationId: orgId,
-          customerId: customerId!,
-          createdById: userId,
-          number,
-          type: 'INVOICE',
-          status: 'PAID',
-          issueDate: now,
-          dueDate: now,
-          currency: data.currency,
-          subtotal,
-          taxAmount,
-          total,
-          paidAmount: total,
-          paymentMethod: data.method,
-          notes: `${POS_NOTE}${data.methodLabel ? ' — ' + data.methodLabel : ''}`,
-          lines: {
-            create: lines.map((l) => ({
-              description: l.description,
-              quantity: l.quantity,
-              unitPrice: l.unitPrice,
-              taxRate: l.taxRate,
-              total: l.total,
-              ...(l.productId ? { productId: l.productId } : {}),
-            })),
+    // Entrepôt résolu avant la vente (créé au besoin)
+    const productLines = lines.filter((l) => l.productId);
+    let warehouseId: string | null = null;
+    if (productLines.length) {
+      const existing = await prisma.warehouse.findFirst({ where: { organizationId: orgId } });
+      warehouseId = existing
+        ? existing.id
+        : (await prisma.warehouse.create({ data: { organizationId: orgId, name: 'Boutique' } })).id;
+    }
+
+    // Facture payée + paiement créés en une seule requête (relations imbriquées).
+    // Pas de transaction interactive : incompatible avec le pooler PgBouncer de Supabase.
+    const invoice = await prisma.invoice.create({
+      data: {
+        organizationId: orgId,
+        customerId: customerId!,
+        createdById: userId,
+        number,
+        type: 'INVOICE',
+        status: 'PAID',
+        issueDate: now,
+        dueDate: now,
+        currency: data.currency,
+        subtotal,
+        taxAmount,
+        total,
+        paidAmount: total,
+        paymentMethod: data.method,
+        notes: `${POS_NOTE}${data.methodLabel ? ' — ' + data.methodLabel : ''}`,
+        lines: {
+          create: lines.map((l) => ({
+            description: l.description,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            taxRate: l.taxRate,
+            total: l.total,
+            ...(l.productId ? { productId: l.productId } : {}),
+          })),
+        },
+        payments: {
+          create: {
+            amount: total,
+            date: now,
+            method: data.method,
+            reference: data.reference,
+            notes: data.methodLabel,
           },
         },
-        include: {
-          lines: true,
-          customer: { select: { id: true, name: true } },
-          organization: { select: ORG_SELECT },
-        },
-      });
-
-      await tx.payment.create({
-        data: {
-          invoiceId: inv.id,
-          amount: total,
-          date: now,
-          method: data.method,
-          reference: data.reference,
-          notes: data.methodLabel,
-        },
-      });
-
-      // Sortie de stock pour les lignes rattachées à un produit
-      const productLines = lines.filter((l) => l.productId);
-      if (productLines.length) {
-        let warehouse = await tx.warehouse.findFirst({ where: { organizationId: orgId } });
-        if (!warehouse) {
-          warehouse = await tx.warehouse.create({
-            data: { organizationId: orgId, name: 'Boutique' },
-          });
-        }
-        for (const l of productLines) {
-          await tx.stockMovement.create({
-            data: {
-              productId: l.productId!,
-              warehouseId: warehouse.id,
-              type: 'SALE',
-              quantity: l.quantity,
-              reference: number,
-              notes: POS_NOTE,
-            },
-          });
-          await tx.stockLevel.upsert({
-            where: { productId_warehouseId: { productId: l.productId!, warehouseId: warehouse.id } },
-            update: { quantity: { increment: -Math.abs(l.quantity) } },
-            create: { productId: l.productId!, warehouseId: warehouse.id, quantity: -Math.abs(l.quantity) },
-          });
-        }
-      }
-
-      return inv;
+      },
+      include: {
+        lines: true,
+        customer: { select: { id: true, name: true } },
+        organization: { select: ORG_SELECT },
+      },
     });
+
+    // Sortie de stock : lot d'écritures envoyées en une seule fois
+    if (warehouseId && productLines.length) {
+      const ops = productLines.flatMap((l) => [
+        prisma.stockMovement.create({
+          data: {
+            productId: l.productId!,
+            warehouseId,
+            type: 'SALE' as const,
+            quantity: l.quantity,
+            reference: number,
+            notes: POS_NOTE,
+          },
+        }),
+        prisma.stockLevel.upsert({
+          where: { productId_warehouseId: { productId: l.productId!, warehouseId } },
+          update: { quantity: { increment: -Math.abs(l.quantity) } },
+          create: { productId: l.productId!, warehouseId, quantity: -Math.abs(l.quantity) },
+        }),
+      ]);
+      try {
+        await prisma.$transaction(ops);
+      } catch (e) {
+        // La vente est déjà enregistrée ; on ne bloque pas le ticket pour le stock
+        console.error('[pos] mise à jour du stock échouée pour', number, e);
+      }
+    }
 
     const change =
       data.amountReceived != null ? Math.max(0, data.amountReceived - total) : null;

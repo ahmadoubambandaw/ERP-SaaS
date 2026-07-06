@@ -2,9 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
-  Search, ScanLine, Plus, Minus, Trash2, X, Banknote, Smartphone,
-  CreditCard, Printer, Check, ShoppingCart, Camera, Delete, BarChart3, Receipt,
+  Search, ScanLine, Plus, Minus, Trash2, X, Banknote,
+  Printer, Check, ShoppingCart, Camera, Delete, BarChart3, Receipt,
 } from 'lucide-react';
+import { CashLogo, WaveLogo, MaxItLogo, CardLogo } from '../../components/ui/PayLogos';
 import { posService } from '../../services/api';
 import { useAuthStore } from '../../store/auth.store';
 import { formatCurrency } from '../../utils/format';
@@ -34,11 +35,16 @@ interface CartLine {
 
 type Method = 'CASH' | 'WAVE' | 'ORANGE_MONEY' | 'BANK_TRANSFER';
 
-const METHODS: { id: Method; label: string; icon: typeof Banknote; color: string }[] = [
-  { id: 'CASH', label: 'Espèces', icon: Banknote, color: 'bg-emerald-500' },
-  { id: 'WAVE', label: 'Wave', icon: Smartphone, color: 'bg-sky-500' },
-  { id: 'ORANGE_MONEY', label: 'Orange Money', icon: Smartphone, color: 'bg-orange-500' },
-  { id: 'BANK_TRANSFER', label: 'Carte bancaire', icon: CreditCard, color: 'bg-indigo-500' },
+const METHODS: {
+  id: Method;
+  label: string;
+  logo: (props: { className?: string }) => JSX.Element;
+  bg: string;
+}[] = [
+  { id: 'CASH', label: 'Espèces', logo: CashLogo, bg: '#0E9F6E' },
+  { id: 'WAVE', label: 'Wave', logo: WaveLogo, bg: '#00B9F1' },
+  { id: 'ORANGE_MONEY', label: 'Orange Money', logo: MaxItLogo, bg: '#FF7900' },
+  { id: 'BANK_TRANSFER', label: 'Carte bancaire', logo: CardLogo, bg: '#1F2A5A' },
 ];
 
 function tileColor(seed: string): string {
@@ -469,11 +475,11 @@ function TenderModal({
 
   if (!method) {
     return (
-      <Modal onClose={onClose} title="Moyen de paiement">
+      <Modal onClose={onClose} title="Paiement">
         <p className="text-center text-3xl font-extrabold mb-5">{formatCurrency(total, currency)}</p>
         <div className="grid grid-cols-2 gap-3">
           {METHODS.map((m) => {
-            const Icon = m.icon;
+            const Logo = m.logo;
             return (
               <button
                 key={m.id}
@@ -481,9 +487,10 @@ function TenderModal({
                   if (m.id === 'CASH') setMethod({ id: m.id, label: m.label });
                   else onConfirm(m.id, m.label, null);
                 }}
-                className={`flex flex-col items-center gap-2 py-6 rounded-2xl text-white font-bold ${m.color} active:scale-95 transition`}
+                style={{ backgroundColor: m.bg }}
+                className="flex flex-col items-center justify-center gap-2.5 py-6 rounded-2xl text-white font-bold active:scale-95 transition shadow-sm"
               >
-                <Icon className="w-8 h-8" />
+                <Logo className="h-10" />
                 {m.label}
               </button>
             );
