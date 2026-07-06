@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, AlertTriangle, Loader2, Download, UploadCloud, Camera, LayoutGrid } from 'lucide-react';
+import { Plus, Package, AlertTriangle, Loader2, Download, UploadCloud, Camera, LayoutGrid, ScanLine, X } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -11,6 +11,7 @@ import { useAuthStore } from '../../store/auth.store';
 import ImportModal, { ImportColumn } from '../../components/import/ImportModal';
 import { parseNumberFr } from '../../utils/importParse';
 import { fileToSquareDataUrl } from '../../utils/imageFile';
+import BarcodeScanner from '../../components/ui/BarcodeScanner';
 
 interface ProductGroup {
   name: string;
@@ -34,6 +35,7 @@ const IMPORT_COLUMNS: ImportColumn[] = [
   { key: 'salePrice', label: 'Prix de vente', aliases: ['prixvente', 'vente', 'prix', 'pv', 'prixunitaire'], example: '14 000' },
   { key: 'reorderLevel', label: 'Seuil d\'alerte stock', aliases: ['seuil', 'stockmin', 'minimum'], example: '5' },
   { key: 'unitOfMeasure', label: 'Unité', aliases: ['unite', 'mesure'], example: 'pcs' },
+  { key: 'barcode', label: 'Code-barres', aliases: ['codebarre', 'codebarres', 'ean', 'qr', 'barcode'], example: '6181234567890' },
 ];
 
 // Code produit généré quand la colonne est absente (cahiers sans références)
@@ -48,8 +50,11 @@ export default function ProductsPage() {
   const [showForm, setShowForm] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+  const [productImage, setProductImage] = useState<string | null>(null);
+  const productPhotoRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
-  const { register, handleSubmit, reset } = useForm();
+  const { register, handleSubmit, reset, setValue } = useForm();
 
   const { data, isLoading } = useQuery({ queryKey: ['products'], queryFn: () => inventoryService.products() });
   const { data: lowData } = useQuery({ queryKey: ['low-stock'], queryFn: () => inventoryService.lowStock() });
@@ -105,6 +110,7 @@ export default function ProductsPage() {
       qc.invalidateQueries({ queryKey: ['product-categories'] });
       setShowForm(false);
       setErrorMsg('');
+      setProductImage(null);
       reset();
       toast.success('Produit enregistré');
     },
@@ -120,12 +126,12 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Catalogue produits</h1>
           <p className="text-gray-500 text-sm">{products.length} produit(s)</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {products.length > 0 && (
             <button
               onClick={() => exportToCsv('produits', ['Code', 'Nom', 'Catégorie', 'Unité', 'Prix achat', 'Prix vente', 'TVA (%)', 'Stock'],
@@ -158,6 +164,7 @@ export default function ProductsPage() {
               unitOfMeasure: row.unitOfMeasure || 'pcs',
             };
             if (row.category) payload.category = row.category;
+            if (row.barcode) payload.barcode = row.barcode;
             const cost = parseNumberFr(row.costPrice);
             const sale = parseNumberFr(row.salePrice);
             const reorder = parseNumberFr(row.reorderLevel);
@@ -252,9 +259,64 @@ export default function ProductsPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <form
+            onSubmit={handleSubmit((d) => mutation.mutate({ ...d, ...(productImage ? { image: productImage } : {}) }))}
+            className="grid grid-cols-2 md:grid-cols-3 gap-4"
+          >
+            {/* Photo du produit */}
+            <div className="col-span-full flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => productPhotoRef.current?.click()}
+                className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-300 hover:border-primary-400 flex items-center justify-center overflow-hidden bg-gray-50 shrink-0"
+                title="Ajouter une photo du produit"
+              >
+                {productImage ? (
+                  <img src={productImage} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <Camera className="w-6 h-6 text-gray-400" />
+                )}
+              </button>
+              <div>
+                <p className="text-sm font-medium text-gray-700">Photo du produit</p>
+                <p className="text-xs text-gray-400">Visible sur la caisse — prenez-la directement avec le téléphone.</p>
+                {productImage && (
+                  <button type="button" onClick={() => setProductImage(null)} className="text-xs text-red-500 mt-0.5 flex items-center gap-1">
+                    <X className="w-3 h-3" /> Retirer la photo
+                  </button>
+                )}
+              </div>
+              <input
+                ref={productPhotoRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = '';
+                  if (!f) return;
+                  try { setProductImage(await fileToSquareDataUrl(f)); }
+                  catch (err) { toast.error((err as Error).message); }
+                }}
+              />
+            </div>
+
             <div><label className="label">Code *</label><input {...register('code', { required: true })} className="input" /></div>
             <div className="col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
+            <div className="col-span-2 md:col-span-1">
+              <label className="label">Code-barres / QR</label>
+              <div className="flex gap-2">
+                <input {...register('barcode')} className="input flex-1" placeholder="EAN, QR…" />
+                <button
+                  type="button"
+                  onClick={() => setShowScanner(true)}
+                  className="px-3 rounded-lg bg-gray-900 text-white flex items-center justify-center shrink-0"
+                  title="Scanner le code-barres avec la caméra"
+                >
+                  <ScanLine className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
             <div><label className="label">Categorie</label><input {...register('category')} className="input" /></div>
             <div><label className="label">Unite de mesure</label>
               <select {...register('unitOfMeasure')} className="input">
@@ -270,7 +332,7 @@ export default function ProductsPage() {
             <div><label className="label">Seuil reappro.</label><input {...register('reorderLevel', { valueAsNumber: true })} type="number" className="input" /></div>
             <div><label className="label">TVA (%)</label><input {...register('taxRate', { valueAsNumber: true })} type="number" step="0.5" className="input" /></div>
             <div className="col-span-full flex gap-3 justify-end">
-              <button type="button" onClick={() => { setShowForm(false); setErrorMsg(''); reset(); }} className="btn-secondary">Annuler</button>
+              <button type="button" onClick={() => { setShowForm(false); setErrorMsg(''); setProductImage(null); reset(); }} className="btn-secondary">Annuler</button>
               <button type="submit" disabled={mutation.isPending} className="btn-primary flex items-center gap-2">
                 {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                 {mutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
@@ -280,8 +342,20 @@ export default function ProductsPage() {
         </div>
       )}
 
-      <div className="card">
-        <table className="w-full text-sm">
+      {showScanner && (
+        <BarcodeScanner
+          title="Scanner le code du produit"
+          onClose={() => setShowScanner(false)}
+          onDetected={(code) => {
+            setValue('barcode', code);
+            setShowScanner(false);
+            toast.success(`Code-barres capturé : ${code}`);
+          }}
+        />
+      )}
+
+      <div className="card overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead><tr className="border-b border-gray-100">
             <th className="text-left px-6 py-3 font-medium text-gray-500">Code</th>
             <th className="text-left px-6 py-3 font-medium text-gray-500">Produit</th>
@@ -301,8 +375,26 @@ export default function ProductsPage() {
                 const isLow = Boolean(p.reorderLevel) && stock <= Number(p.reorderLevel);
                 return (
                   <tr key={p.id as string} className="table-row">
-                    <td className="px-6 py-4 font-mono text-xs text-gray-500">{p.code as string}</td>
-                    <td className="px-6 py-4 font-medium">{p.name as string}</td>
+                    <td className="px-6 py-4 font-mono text-xs text-gray-500">
+                      {p.code as string}
+                      {Boolean(p.barcode) && (
+                        <span className="mt-0.5 text-[10px] text-gray-400 flex items-center gap-1">
+                          <ScanLine className="w-3 h-3" /> {p.barcode as string}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 font-medium">
+                      <span className="flex items-center gap-2.5">
+                        {p.image ? (
+                          <img src={p.image as string} alt="" className="w-9 h-9 rounded-lg object-cover shrink-0" />
+                        ) : (
+                          <span className="w-9 h-9 rounded-lg bg-gray-100 text-gray-400 flex items-center justify-center shrink-0">
+                            <Package className="w-4 h-4" />
+                          </span>
+                        )}
+                        {p.name as string}
+                      </span>
+                    </td>
                     <td className="px-6 py-4 text-gray-500">{(p.category as string) || '-'}</td>
                     <td className="px-6 py-4 text-right">{p.costPrice ? formatCurrency(p.costPrice as number, currency) : '-'}</td>
                     <td className="px-6 py-4 text-right">{p.salePrice ? formatCurrency(p.salePrice as number, currency) : '-'}</td>

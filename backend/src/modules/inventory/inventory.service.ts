@@ -21,7 +21,9 @@ const productSchema = z.object({
   salePrice: z.number().min(0).optional(),
   taxRate: z.number().min(0).max(100).default(0),
   reorderLevel: z.number().min(0).optional(),
-  barcode: z.string().optional(),
+  barcode: z.string().max(80).optional(),
+  // Photo du produit : data URL compressée côté client (~420 px)
+  image: z.string().max(500_000).regex(/^data:image\/(png|jpe?g|webp);base64,/, 'Format de photo invalide').optional(),
 });
 
 const movementSchema = z.object({
