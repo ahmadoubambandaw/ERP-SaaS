@@ -21,7 +21,7 @@ interface PlatformOrg {
   plan: string;
   planExpiresAt: string | null;
   createdAt: string;
-  _count: { users: number; invoices: number };
+  _count: { users: number };
 }
 
 interface PlatformStats {
@@ -112,13 +112,13 @@ export default function PlatformAdminPage() {
   }, [orgs, search, statusFilter]);
 
   const exportCsv = () => {
-    const header = ['Organisation', 'Slug', 'Pays', 'Formule', 'Statut', 'Expire le', 'Utilisateurs', 'Factures', 'Inscrit le'];
+    const header = ['Organisation', 'Slug', 'Pays', 'Formule', 'Statut', 'Expire le', 'Utilisateurs', 'Inscrit le'];
     const rows = filteredOrgs.map((o) => {
       const st = statusOf(o);
       return [
         o.name, o.slug, o.country, PLAN_LABELS[o.plan] || o.plan, st.label,
         o.planExpiresAt ? formatDateFr(o.planExpiresAt) : 'Illimité',
-        o._count.users, o._count.invoices, formatDateFr(o.createdAt),
+        o._count.users, formatDateFr(o.createdAt),
       ];
     });
     const escape = (v: unknown) => `"${String(v).replace(/"/g, '""')}"`;
