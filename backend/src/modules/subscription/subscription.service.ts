@@ -78,7 +78,8 @@ export class SubscriptionService {
         createdAt: true,
         referredById: true,
         referralRewarded: true,
-        _count: { select: { users: true, invoices: true } },
+        // Confidentialité : jamais le nombre de factures/ventes du client
+        _count: { select: { users: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -208,7 +209,9 @@ export class SubscriptionService {
     });
     if (!org) throw new AppError('Organisation introuvable', 404);
 
-    const [payments, users, invoiceAgg, invoiceCount, referredBy] = await Promise.all([
+    // Confidentialité : on ne remonte JAMAIS l'activité commerciale du client
+    // (ventes, factures, chiffre d'affaires). Seul son abonnement Naatal nous concerne.
+    const [payments, users, referredBy] = await Promise.all([
       prisma.subscriptionPayment.findMany({
         where: { organizationId: id },
         orderBy: { createdAt: 'desc' },
@@ -220,8 +223,6 @@ export class SubscriptionService {
         orderBy: { createdAt: 'asc' },
         select: { id: true, firstName: true, lastName: true, email: true, role: true },
       }),
-      prisma.invoice.aggregate({ where: { organizationId: id }, _sum: { total: true } }),
-      prisma.invoice.count({ where: { organizationId: id } }),
       org.referredById
         ? prisma.organization.findUnique({ where: { id: org.referredById }, select: { name: true } })
         : Promise.resolve(null),
@@ -236,8 +237,6 @@ export class SubscriptionService {
       ...org,
       referredByName: referredBy?.name || null,
       totalPaid,
-      invoiceCount,
-      invoiceTotal: num(invoiceAgg._sum.total),
       users,
       payments: payments.map((p) => ({ ...p, amount: num(p.amount) })),
     };

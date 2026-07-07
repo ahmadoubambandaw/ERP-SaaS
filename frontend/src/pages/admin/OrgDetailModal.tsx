@@ -8,7 +8,7 @@ interface OrgDetail {
   plan: string; planExpiresAt: string | null; createdAt: string;
   email: string | null; phone: string | null;
   referralCode: string | null; referredByName: string | null;
-  totalPaid: number; invoiceCount: number; invoiceTotal: number;
+  totalPaid: number;
   users: { id: string; firstName: string; lastName: string; email: string; role: string }[];
   payments: {
     id: string; plan: string; months: number; amount: number; currency: string;
@@ -72,22 +72,17 @@ export default function OrgDetailModal({ orgId, onClose }: { orgId: string; onCl
               </div>
             </div>
 
-            {/* KPI */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* KPI — uniquement l'abonnement Naatal, jamais l'activité du client */}
+            <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl border border-gray-100 text-center">
                 <Wallet className="w-4 h-4 text-green-600 mx-auto mb-1" />
                 <p className="font-bold text-gray-900 text-sm">{formatXof(org.totalPaid)}</p>
-                <p className="text-[11px] text-gray-400">Total payé</p>
+                <p className="text-[11px] text-gray-400">Abonnements payés à Naatal</p>
               </div>
               <div className="p-3 rounded-xl border border-gray-100 text-center">
                 <FileText className="w-4 h-4 text-primary-600 mx-auto mb-1" />
-                <p className="font-bold text-gray-900 text-sm">{org.invoiceCount}</p>
-                <p className="text-[11px] text-gray-400">Factures</p>
-              </div>
-              <div className="p-3 rounded-xl border border-gray-100 text-center">
-                <FileText className="w-4 h-4 text-primary-600 mx-auto mb-1" />
-                <p className="font-bold text-gray-900 text-sm">{formatXof(org.invoiceTotal)}</p>
-                <p className="text-[11px] text-gray-400">CA facturé</p>
+                <p className="font-bold text-gray-900 text-sm">{org.users?.length ?? 0}</p>
+                <p className="text-[11px] text-gray-400">Utilisateurs</p>
               </div>
             </div>
 
