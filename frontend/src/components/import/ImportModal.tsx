@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
 import {
   X, UploadCloud, ClipboardPaste, FileSpreadsheet, Loader2,
-  CheckCircle2, AlertTriangle, ArrowLeft, Download,
+  CheckCircle2, AlertTriangle, ArrowLeft, Download, Camera, Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getApiError } from '../../utils/apiError';
 import { normalizeHeader, parsePastedText } from '../../utils/importParse';
+import { fileToScaledDataUrl } from '../../utils/imageFile';
+import { scanService } from '../../services/api';
 
 export interface ImportColumn {
   key: string;
@@ -43,7 +45,9 @@ export default function ImportModal(props: ImportModalProps) {
   const [imported, setImported] = useState(0);
   const [errors, setErrors] = useState<{ line: number; message: string }[]>([]);
   const [parsing, setParsing] = useState(false);
+  const [scanning, setScanning] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
 
   const autoMap = (hdrs: string[]) => {
     const map: Record<string, number> = {};
@@ -73,6 +77,42 @@ export default function ImportModal(props: ImportModalProps) {
     setRawRows(data);
     setMapping(autoMap(hdrs));
     setStep('map');
+  };
+
+  // Lignes déjà structurées (issues de la lecture IA) : chaque objet est mappé par clé de colonne
+  const loadStructuredRows = (objs: Record<string, string>[]) => {
+    const data = objs
+      .map((o) => columns.map((c) => String(o[c.key] ?? '').trim()))
+      .filter((r) => r.some((v) => v !== ''));
+    if (!data.length) {
+      toast.error('Rien de lisible n\'a été détecté sur la photo.');
+      return;
+    }
+    setHeaders(columns.map((c) => c.label));
+    setRawRows(data);
+    setMapping(Object.fromEntries(columns.map((c, i) => [c.key, i]))); // correspondance directe
+    setStep('map');
+  };
+
+  const handlePhoto = async (file: File) => {
+    setScanning(true);
+    const t = toast.loading('Lecture de la photo par l\'IA…');
+    try {
+      const image = await fileToScaledDataUrl(file, 1600, 0.82);
+      const res = await scanService.table({
+        image,
+        columns: columns.map((c) => ({ key: c.key, label: c.label, example: c.example, required: c.required })),
+        entity: templateName,
+      });
+      const rows = (res.data?.data?.rows || []) as Record<string, string>[];
+      toast.success(`${rows.length} ligne(s) lue(s) — vérifiez avant d'importer`, { id: t });
+      loadStructuredRows(rows);
+    } catch (e) {
+      toast.error(getApiError(e, 'La lecture de la photo a échoué.'), { id: t });
+    } finally {
+      setScanning(false);
+      if (photoRef.current) photoRef.current.value = '';
+    }
   };
 
   const handleFile = async (file: File) => {
@@ -183,6 +223,39 @@ export default function ImportModal(props: ImportModalProps) {
               <p className="text-sm text-gray-500">
                 {description || 'Récupérez en quelques secondes ce que vous teniez déjà dans Excel, Word ou votre cahier.'}
               </p>
+
+              {/* Photo du cahier — lecture IA */}
+              <button
+                onClick={() => photoRef.current?.click()}
+                disabled={scanning}
+                className="w-full rounded-2xl p-5 text-left bg-gradient-to-br from-primary-600 to-primary-700 text-white shadow-md active:scale-[0.99] transition disabled:opacity-70"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                    {scanning ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold flex items-center gap-1.5">
+                      Photographier mon cahier <Sparkles className="w-4 h-4 text-amber-300" />
+                    </p>
+                    <p className="text-xs text-white/85 mt-0.5">
+                      {scanning ? 'Lecture en cours…' : 'L\'IA lit votre cahier, même écrit à la main et en désordre.'}
+                    </p>
+                  </div>
+                </div>
+              </button>
+              <input
+                ref={photoRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handlePhoto(e.target.files[0])}
+              />
+
+              <div className="flex items-center gap-3 text-xs text-gray-400">
+                <span className="flex-1 h-px bg-gray-200" /> ou un fichier <span className="flex-1 h-px bg-gray-200" />
+              </div>
 
               <label className="flex items-center gap-2 text-sm text-gray-600">
                 <input type="checkbox" checked={hasHeader} onChange={(e) => setHasHeader(e.target.checked)} className="rounded" />
