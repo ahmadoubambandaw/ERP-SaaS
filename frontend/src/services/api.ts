@@ -164,6 +164,11 @@ export const companiesService = {
   switch: (id: string) => api.post(`/companies/${id}/switch`),
 };
 
+export const scanService = {
+  // Lecture IA d'une photo de cahier → lignes structurées
+  table: (data: { image: string; columns: unknown[]; entity?: string }) => api.post('/scan/table', data),
+};
+
 export const posService = {
   catalog: () => api.get('/pos/catalog'),
   summary: () => api.get('/pos/summary'),
