@@ -3,6 +3,7 @@ import {
   Building2, BarChart2, FileText, Package, Users, TrendingUp, FolderKanban,
   Smartphone, ShieldCheck, Globe, Check, ArrowRight, Menu, X, Star, MessageCircle,
   Store, Utensils, Wrench, Sparkles, ChevronDown, HelpCircle,
+  Zap, Crown, Warehouse, Truck, Pill, GraduationCap, HardHat, Boxes,
 } from 'lucide-react';
 import { useState } from 'react';
 import Logo from '../../components/ui/Logo';
@@ -102,11 +103,22 @@ const FEATURES = [
   },
 ];
 
-const PLANS = [
+type Plan = {
+  name: string;
+  icon: typeof Store;
+  monthly: number | null; // null = sur mesure
+  desc: string;
+  features: string[];
+  cta: string;
+  highlight: boolean;
+  badge?: string;
+};
+
+const PLANS: Plan[] = [
   {
     name: 'Caisse',
-    price: '5 000',
-    period: 'F CFA / mois',
+    icon: Store,
+    monthly: 5000,
     desc: 'La caisse du boutiquier — 170 F/jour',
     features: ['1 utilisateur', 'Caisse tactile & scan code-barres', 'Encaissement Wave, Orange Money, espèces', 'Produits, stock & clients', 'Factures & tickets'],
     cta: 'Essayer 30 jours gratuits',
@@ -114,8 +126,8 @@ const PLANS = [
   },
   {
     name: 'Starter',
-    price: '10 000',
-    period: 'F CFA / mois',
+    icon: Zap,
+    monthly: 10000,
     desc: 'Pour gérer sereinement',
     features: ['3 utilisateurs', 'Tout Caisse, plus :', 'Facturation & devis illimités', 'Comptabilité SYSCOHADA', 'Application mobile (PWA)'],
     cta: 'Essayer 30 jours gratuits',
@@ -123,17 +135,18 @@ const PLANS = [
   },
   {
     name: 'Professional',
-    price: '20 000',
-    period: 'F CFA / mois',
+    icon: TrendingUp,
+    monthly: 20000,
     desc: 'Pour les PME qui grandissent',
     features: ['10 utilisateurs', 'Tout Starter, plus :', 'RH & Paie complète', 'CRM & pipeline commercial', 'Achats & gestion de projets', 'Export Excel & PDF'],
     cta: 'Essayer 30 jours gratuits',
     highlight: true,
+    badge: 'Le plus populaire',
   },
   {
     name: 'Enterprise',
-    price: 'Sur mesure',
-    period: '',
+    icon: Crown,
+    monthly: null,
     desc: 'Pour les structures exigeantes',
     features: ['Utilisateurs illimités', 'Tout Professional, plus :', 'Multi-entreprises (plusieurs boutiques)', 'Gestion des rôles (profils métiers)', 'Support prioritaire', 'Formation de vos équipes'],
     cta: 'Nous contacter',
@@ -141,9 +154,25 @@ const PLANS = [
   },
 ];
 
+// Cibles principales de la formule Entreprise (multi-boutiques, utilisateurs illimités)
+const ENTERPRISE_TARGETS = [
+  { icon: Store, label: 'Chaînes de boutiques & supérettes', desc: 'Plusieurs points de vente pilotés depuis un seul compte.' },
+  { icon: Truck, label: 'Grossistes & distribution', desc: 'Gros volumes, réseau de revendeurs, entrepôts multiples.' },
+  { icon: Warehouse, label: 'Quincailleries & négoce de matériaux', desc: 'Milliers de références, fournisseurs et dépôts.' },
+  { icon: Pill, label: 'Pharmacies & réseaux de santé', desc: 'Officines, cliniques et cabinets à plusieurs sites.' },
+  { icon: Utensils, label: 'Chaînes de restauration & franchises', desc: 'Restaurants, fast-foods et traiteurs multi-établissements.' },
+  { icon: GraduationCap, label: 'Écoles, salles de sport & services', desc: 'Abonnements, membres et équipes réparties sur plusieurs lieux.' },
+  { icon: HardHat, label: 'PME BTP & prestataires', desc: 'Chantiers, projets, matériel et sous-traitants à suivre.' },
+  { icon: Boxes, label: 'Import-export & sociétés multi-activités', desc: 'Plusieurs sociétés, devises et métiers dans un même tableau de bord.' },
+];
+
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
+  const [annual, setAnnual] = useState(false);
+
+  // Prix affiché selon le cycle. En annuel : 2 mois offerts (paiement de 10 mois).
+  const fmt = (n: number) => n.toLocaleString('fr-FR');
 
   return (
     <div className="min-h-screen bg-white">
@@ -158,6 +187,7 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-8 text-sm text-gray-600">
             <a href="#fonctionnalites" className="hover:text-gray-900">Fonctionnalités</a>
             <a href="#tarifs" className="hover:text-gray-900">Tarifs</a>
+            <a href="#entreprise" className="hover:text-gray-900">Entreprise</a>
             <a href="#faq" className="hover:text-gray-900">FAQ</a>
           </nav>
 
@@ -179,6 +209,7 @@ export default function LandingPage() {
           <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3">
             <a href="#fonctionnalites" onClick={() => setMenuOpen(false)} className="block text-gray-600">Fonctionnalités</a>
             <a href="#tarifs" onClick={() => setMenuOpen(false)} className="block text-gray-600">Tarifs</a>
+            <a href="#entreprise" onClick={() => setMenuOpen(false)} className="block text-gray-600">Entreprise</a>
             <a href="#faq" onClick={() => setMenuOpen(false)} className="block text-gray-600">FAQ</a>
             <div className="flex gap-3 pt-2">
               <Link to="/login" className="btn-secondary flex-1 text-center">Se connecter</Link>
@@ -370,42 +401,157 @@ export default function LandingPage() {
 
       {/* ===== Pricing ===== */}
       <section id="tarifs" className="max-w-6xl mx-auto px-4 md:px-6 py-20">
-        <div className="text-center mb-14">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Des tarifs simples et justes</h2>
+        <div className="text-center mb-8">
+          <span className="inline-flex items-center gap-2 bg-primary-50 text-primary-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
+            <Sparkles className="w-3.5 h-3.5" /> 30 jours d'essai gratuit — sans carte bancaire
+          </span>
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900">Choisissez votre formule</h2>
           <p className="text-gray-500 mt-3">À partir de 170 F par jour. Payez en F CFA, annulez quand vous voulez.</p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.name}
-              className={`card p-6 flex flex-col ${plan.highlight ? 'border-2 border-primary-500 shadow-lg relative' : ''}`}
+
+        {/* Bascule Mensuel / Annuel */}
+        <div className="flex items-center justify-center gap-3 mb-12">
+          <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
+            <button
+              onClick={() => setAnnual(false)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${!annual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
             >
-              {plan.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-xs font-semibold px-3 py-1 rounded-full">
-                  Le plus populaire
-                </span>
-              )}
-              <h3 className="font-bold text-gray-900">{plan.name}</h3>
-              <p className="text-xs text-gray-400 mt-1">{plan.desc}</p>
-              <div className="mt-4 mb-6">
-                <span className="text-3xl font-bold text-gray-900">{plan.price}</span>
-                {plan.period && <span className="text-sm text-gray-400 ml-1">{plan.period}</span>}
-              </div>
-              <ul className="space-y-2.5 text-sm text-gray-600 flex-1">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2">
-                    <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" /> {f}
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/register"
-                className={`mt-6 text-center ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}
+              Mensuel
+            </button>
+            <button
+              onClick={() => setAnnual(true)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${annual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+            >
+              Annuel
+              <span className="bg-green-100 text-green-700 text-[11px] font-semibold px-2 py-0.5 rounded-full">2 mois offerts</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
+          {PLANS.map((plan) => {
+            const Icon = plan.icon;
+            return (
+              <div
+                key={plan.name}
+                className={`card p-6 flex flex-col relative ${plan.highlight ? 'border-2 border-primary-500 shadow-xl xl:-translate-y-2' : ''}`}
               >
-                {plan.cta}
-              </Link>
-            </div>
-          ))}
+                {plan.badge && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary-600 text-white text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
+                    {plan.badge}
+                  </span>
+                )}
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${plan.highlight ? 'bg-primary-600' : 'bg-primary-50'}`}>
+                  <Icon className={`w-5 h-5 ${plan.highlight ? 'text-white' : 'text-primary-600'}`} />
+                </div>
+                <h3 className="font-bold text-gray-900 text-lg">{plan.name}</h3>
+                <p className="text-xs text-gray-400 mt-1 min-h-[2rem]">{plan.desc}</p>
+
+                <div className="mt-4 mb-6 min-h-[4.25rem]">
+                  {plan.monthly === null ? (
+                    <>
+                      <span className="text-3xl font-bold text-gray-900">Sur mesure</span>
+                      <p className="text-xs text-gray-400 mt-1">Selon vos boutiques & besoins</p>
+                    </>
+                  ) : annual ? (
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-gray-900">{fmt(plan.monthly * 10)}</span>
+                        <span className="text-sm text-gray-400">F CFA / an</span>
+                      </div>
+                      <p className="text-xs text-green-600 mt-1 font-medium">
+                        soit {fmt(Math.round((plan.monthly * 10) / 12))} F/mois · 2 mois offerts
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-3xl font-bold text-gray-900">{fmt(plan.monthly)}</span>
+                        <span className="text-sm text-gray-400">F CFA / mois</span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-1">Sans engagement</p>
+                    </>
+                  )}
+                </div>
+
+                <ul className="space-y-2.5 text-sm text-gray-600 flex-1">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2">
+                      <Check className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" /> {f}
+                    </li>
+                  ))}
+                </ul>
+                {plan.monthly === null ? (
+                  <a
+                    href={`https://wa.me/${WHATSAPP}?text=${WHATSAPP_MSG}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-6 text-center btn-secondary"
+                  >
+                    {plan.cta}
+                  </a>
+                ) : (
+                  <Link
+                    to="/register"
+                    className={`mt-6 text-center ${plan.highlight ? 'btn-primary' : 'btn-secondary'}`}
+                  >
+                    {plan.cta}
+                  </Link>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ===== Pour qui ? — Formule Entreprise ===== */}
+      <section id="entreprise" className="relative overflow-hidden bg-gray-900">
+        <div className="absolute inset-0 opacity-20" style={{
+          backgroundImage: 'radial-gradient(circle at 15% 20%, #3b82f6 0%, transparent 45%), radial-gradient(circle at 85% 80%, #2563eb 0%, transparent 45%)',
+        }} />
+        <div className="relative max-w-6xl mx-auto px-4 md:px-6 py-20">
+          <div className="text-center mb-14 max-w-2xl mx-auto">
+            <span className="inline-flex items-center gap-2 bg-white/10 text-primary-200 text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
+              <Crown className="w-3.5 h-3.5" /> Formule Entreprise
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">
+              Pour qui est faite la formule Entreprise ?
+            </h2>
+            <p className="text-gray-300 mt-4 leading-relaxed">
+              Dès que vous gérez <strong className="text-white">plusieurs boutiques ou sociétés</strong>,
+              beaucoup de vendeurs et de gros volumes, la formule Entreprise réunit tout : multi-entreprises,
+              utilisateurs illimités, profils par métier et support prioritaire.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {ENTERPRISE_TARGETS.map((t) => {
+              const Icon = t.icon;
+              return (
+                <div key={t.label} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-colors">
+                  <div className="w-11 h-11 bg-primary-600/30 rounded-xl flex items-center justify-center mb-4">
+                    <Icon className="w-5 h-5 text-primary-300" />
+                  </div>
+                  <h3 className="font-semibold text-white text-[15px] leading-snug">{t.label}</h3>
+                  <p className="text-sm text-gray-400 mt-2 leading-relaxed">{t.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Bonjour, je gère plusieurs boutiques et je souhaite en savoir plus sur la formule Entreprise de Naatal.')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-primary text-base px-8 py-3 inline-flex items-center gap-2 w-full sm:w-auto justify-center"
+            >
+              Parler à un conseiller <ArrowRight className="w-4 h-4" />
+            </a>
+            <a href="#tarifs" className="text-gray-300 hover:text-white text-sm font-medium">
+              Comparer les formules ↑
+            </a>
+          </div>
         </div>
       </section>
 
