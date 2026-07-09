@@ -65,38 +65,68 @@ Règles :
 Réponds UNIQUEMENT avec un tableau JSON (aucun texte avant ou après), par exemple :
 [{"${data.columns[0].key}":"...","${data.columns[1]?.key ?? data.columns[0].key}":"..."}]`;
 
-    let res: Response;
-    try {
-      res = await fetch('https://api.anthropic.com/v1/messages', {
+    const content = [
+      { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+      { type: 'text', text: prompt },
+    ];
+
+    const callModel = async (model: string): Promise<Response> => {
+      return fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'x-api-key': apiKey,
           'anthropic-version': '2023-06-01',
           'content-type': 'application/json',
         },
-        body: JSON.stringify({
-          model: MODEL,
-          max_tokens: 4096,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-                { type: 'text', text: prompt },
-              ],
-            },
-          ],
-        }),
+        body: JSON.stringify({ model, max_tokens: 4096, messages: [{ role: 'user', content }] }),
       });
-    } catch (e) {
-      console.error('[scan] appel IA échoué:', e);
-      throw new AppError("La lecture de la photo a échoué (réseau). Réessayez.", 502);
+    };
+
+    // Modèle principal, puis bascule sur des modèles de secours si le nom n'est pas reconnu.
+    const candidates = [MODEL, 'claude-haiku-4-5-20251001', 'claude-3-5-sonnet-latest']
+      .filter((v, i, a) => a.indexOf(v) === i);
+
+    let res: Response | null = null;
+    for (const model of candidates) {
+      let r: Response;
+      try {
+        r = await callModel(model);
+      } catch (e) {
+        console.error('[scan] appel IA échoué (réseau):', e);
+        throw new AppError('La lecture de la photo a échoué (réseau). Réessayez.', 502);
+      }
+      if (r.ok) { res = r; break; }
+      // Erreur liée au modèle → on tente le suivant ; sinon on s'arrête.
+      const peek = await r.clone().text().catch(() => '');
+      const modelIssue = r.status === 404 || /model/i.test(peek);
+      if (modelIssue && model !== candidates[candidates.length - 1]) {
+        console.warn(`[scan] modèle "${model}" refusé, essai suivant…`);
+        continue;
+      }
+      res = r;
+      break;
     }
+    if (!res) throw new AppError('La lecture IA a échoué. Réessayez.', 502);
 
     if (!res.ok) {
       const detail = await res.text().catch(() => '');
-      console.error('[scan] IA erreur', res.status, detail.slice(0, 300));
-      throw new AppError("La lecture de la photo a échoué. Réessayez avec une photo plus nette.", 502);
+      console.error('[scan] IA erreur', res.status, detail.slice(0, 500));
+      // Remonte la raison exacte d'Anthropic (clé invalide, modèle introuvable, quota…)
+      let reason = '';
+      try {
+        const j = JSON.parse(detail) as { error?: { type?: string; message?: string } };
+        reason = j.error?.message || j.error?.type || '';
+      } catch { /* détail non-JSON */ }
+      if (res.status === 401 || /authentication|x-api-key|invalid.*key/i.test(reason)) {
+        throw new AppError('Clé IA (ANTHROPIC_API_KEY) invalide ou manquante sur le serveur.', 502);
+      }
+      if (res.status === 404 || /model/i.test(reason)) {
+        throw new AppError(`Modèle IA introuvable : ${reason || MODEL}. Vérifiez AI_IMPORT_MODEL.`, 502);
+      }
+      if (res.status === 429 || /rate|quota|credit|billing/i.test(reason)) {
+        throw new AppError('Crédit/quota IA épuisé. Vérifiez votre compte Anthropic (facturation).', 502);
+      }
+      throw new AppError(`La lecture IA a échoué${reason ? ' : ' + reason.slice(0, 140) : ''}.`, 502);
     }
 
     const payload = (await res.json()) as { content?: { type: string; text?: string }[] };
