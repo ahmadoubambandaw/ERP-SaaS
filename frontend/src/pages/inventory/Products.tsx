@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Package, AlertTriangle, Loader2, Download, UploadCloud, Camera, LayoutGrid, ScanLine, X } from 'lucide-react';
+import { Plus, Package, AlertTriangle, Loader2, Download, UploadCloud, Camera, LayoutGrid, ScanLine, X, PackagePlus } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -59,10 +59,15 @@ export default function ProductsPage() {
   const { data, isLoading } = useQuery({ queryKey: ['products'], queryFn: () => inventoryService.products() });
   const { data: lowData } = useQuery({ queryKey: ['low-stock'], queryFn: () => inventoryService.lowStock() });
   const { data: catData } = useQuery({ queryKey: ['product-categories'], queryFn: () => inventoryService.categories() });
+  const { data: whData } = useQuery({ queryKey: ['warehouses'], queryFn: () => inventoryService.warehouses() });
 
   const allProducts = data?.data?.data || [];
   const lowStock = lowData?.data?.data || [];
   const groups: ProductGroup[] = catData?.data?.data || [];
+  const warehouses = (whData?.data?.data || []) as Array<{ id: string; name: string }>;
+
+  // Raccourci de réapprovisionnement
+  const [receiveFor, setReceiveFor] = useState<Record<string, unknown> | null>(null);
 
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [uploadingGroup, setUploadingGroup] = useState<string | null>(null);
@@ -180,11 +185,26 @@ export default function ProductsPage() {
       )}
 
       {lowStock.length > 0 && (
-        <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-          <AlertTriangle className="w-5 h-5 text-orange-500" />
-          <p className="text-sm text-orange-700">
-            <strong>{lowStock.length}</strong> produit(s) en dessous du seuil de reapprovisionnement
+        <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl">
+          <p className="text-sm text-orange-700 flex items-center gap-2 mb-3">
+            <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0" />
+            <span><strong>{lowStock.length}</strong> produit(s) à réapprovisionner — touchez « Réappro » quand vous recevez la marchandise.</span>
           </p>
+          <div className="flex flex-wrap gap-2">
+            {lowStock.map((p: Record<string, unknown>) => (
+              <button
+                key={p.id as string}
+                onClick={() => setReceiveFor(p)}
+                className="flex items-center gap-2 bg-white border border-orange-200 hover:border-orange-400 rounded-full pl-3 pr-2 py-1.5 text-sm shadow-sm"
+              >
+                <span className="font-medium text-gray-800">{p.name as string}</span>
+                <span className="text-xs text-orange-600">{getStock(p)} {p.unitOfMeasure as string}</span>
+                <span className="flex items-center gap-1 bg-emerald-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                  <PackagePlus className="w-3.5 h-3.5" /> Réappro
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -399,8 +419,19 @@ export default function ProductsPage() {
                     <td className="px-6 py-4 text-right">{p.costPrice ? formatCurrency(p.costPrice as number, currency) : '-'}</td>
                     <td className="px-6 py-4 text-right">{p.salePrice ? formatCurrency(p.salePrice as number, currency) : '-'}</td>
                     <td className={`px-6 py-4 text-right font-medium ${isLow ? 'text-orange-600' : 'text-gray-900'}`}>
-                      {stock} {p.unitOfMeasure as string}
-                      {isLow && <AlertTriangle className="w-3.5 h-3.5 inline ml-1" />}
+                      <span className="inline-flex items-center gap-2 justify-end">
+                        <span>
+                          {stock} {p.unitOfMeasure as string}
+                          {isLow && <AlertTriangle className="w-3.5 h-3.5 inline ml-1" />}
+                        </span>
+                        <button
+                          onClick={() => setReceiveFor(p)}
+                          title="Réapprovisionner ce produit"
+                          className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center"
+                        >
+                          <PackagePlus className="w-4 h-4" />
+                        </button>
+                      </span>
                     </td>
                   </tr>
                 );
@@ -408,6 +439,111 @@ export default function ProductsPage() {
             }
           </tbody>
         </table>
+      </div>
+
+      {receiveFor && (
+        <ReceiveStockModal
+          product={receiveFor}
+          warehouses={warehouses}
+          onClose={() => setReceiveFor(null)}
+          onDone={() => {
+            qc.invalidateQueries({ queryKey: ['products'] });
+            qc.invalidateQueries({ queryKey: ['low-stock'] });
+            qc.invalidateQueries({ queryKey: ['stock-levels'] });
+            qc.invalidateQueries({ queryKey: ['movements'] });
+            setReceiveFor(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ===== Raccourci de réapprovisionnement : « j'ai reçu X » sans re-saisir le produit =====
+function ReceiveStockModal({
+  product, warehouses, onClose, onDone,
+}: {
+  product: Record<string, unknown>;
+  warehouses: Array<{ id: string; name: string }>;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const [qty, setQty] = useState('');
+  const [saving, setSaving] = useState(false);
+  const unit = (product.unitOfMeasure as string) || 'pcs';
+  const levels = (product.stockLevels as Array<{ quantity: number; warehouseId?: string }>) || [];
+  const stock = levels.reduce((s, l) => s + Number(l.quantity), 0);
+  const reorder = product.reorderLevel != null ? Number(product.reorderLevel) : null;
+  // Suggestion : remonter à ~2× le seuil
+  const suggested = reorder ? Math.max(reorder * 2 - stock, reorder) : null;
+
+  async function submit(quantity: number) {
+    if (!quantity || quantity <= 0) return;
+    setSaving(true);
+    try {
+      let warehouseId = levels.find((l) => l.warehouseId)?.warehouseId || warehouses[0]?.id;
+      if (!warehouseId) {
+        const res = await inventoryService.createWarehouse({ name: 'Boutique' });
+        warehouseId = res.data?.data?.id;
+      }
+      await inventoryService.createMovement({
+        productId: product.id,
+        warehouseId,
+        type: 'PURCHASE',
+        quantity,
+        reference: 'Réappro',
+      });
+      toast.success(`+${quantity} ${unit} — stock réapprovisionné`);
+      onDone();
+    } catch (e) {
+      toast.error(getApiError(e, 'Échec du réapprovisionnement'));
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4" onClick={onClose}>
+      <div className="bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="font-bold text-gray-900 flex items-center gap-2"><PackagePlus className="w-5 h-5 text-emerald-600" /> Réapprovisionner</h3>
+          <button onClick={onClose} className="p-1 text-gray-400"><X className="w-5 h-5" /></button>
+        </div>
+        <p className="text-sm text-gray-500 mb-4">
+          <b className="text-gray-800">{product.name as string}</b> — stock actuel : {stock} {unit}
+          {reorder != null && <span className="text-orange-600"> · seuil {reorder}</span>}
+        </p>
+
+        <label className="label">Quantité reçue</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number" min="0" step="1" autoFocus value={qty}
+            onChange={(e) => setQty(e.target.value)}
+            placeholder={suggested ? String(suggested) : '0'}
+            className="input text-lg font-semibold flex-1"
+          />
+          <span className="text-gray-500 text-sm">{unit}</span>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mt-3">
+          {[suggested, 10, 25, 50, 100].filter((v, i, a) => v && a.indexOf(v) === i).slice(0, 4).map((v) => (
+            <button key={v} onClick={() => setQty(String(v))} className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm font-medium hover:border-emerald-400">
+              +{v}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-[11px] text-gray-400 mt-3">
+          Enregistré comme une entrée de stock (réception). Aucune ressaisie du produit.
+        </p>
+
+        <button
+          disabled={saving || !(parseFloat(qty) > 0)}
+          onClick={() => submit(parseFloat(qty))}
+          className="w-full mt-3 py-3 rounded-xl bg-emerald-600 text-white font-bold disabled:opacity-40 flex items-center justify-center gap-2"
+        >
+          {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+          Ajouter au stock
+        </button>
       </div>
     </div>
   );
