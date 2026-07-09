@@ -6,10 +6,18 @@ import { subscriptionService } from '../../services/api';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import BottomNav from './BottomNav';
+import { useUiStore, applyDarkClass } from '../../store/ui.store';
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const dark = useUiStore((s) => s.dark);
+
+  // Mode sombre : appliqué au <html> tant qu'on est dans l'app, retiré en sortant
+  useEffect(() => {
+    applyDarkClass(dark);
+    return () => applyDarkClass(false);
+  }, [dark]);
 
   // Close the mobile drawer whenever the route changes
   useEffect(() => {

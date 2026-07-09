@@ -13,6 +13,7 @@ import { posService, organizationService } from '../../services/api';
 import { useAuthStore } from '../../store/auth.store';
 import { formatCurrency } from '../../utils/format';
 import { printReceipt, printZReport, methodLabel, ReceiptData } from '../../utils/posReceipt';
+import { useUiStore, applyDarkClass } from '../../store/ui.store';
 
 interface PosProduct {
   id: string;
@@ -64,6 +65,13 @@ export default function POS() {
   const navigate = useNavigate();
   const { organization, user } = useAuthStore();
   const currency = organization?.currency || 'XOF';
+  const dark = useUiStore((s) => s.dark);
+
+  // La caisse est hors du Layout : elle applique aussi le mode sombre
+  useEffect(() => {
+    applyDarkClass(dark);
+    return () => applyDarkClass(false);
+  }, [dark]);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['pos-catalog'],
