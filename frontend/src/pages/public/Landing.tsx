@@ -169,9 +169,7 @@ const ENTERPRISE_TARGETS = [
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
-  const [annual, setAnnual] = useState(false);
 
-  // Prix affiché selon le cycle. En annuel : 2 mois offerts (paiement de 10 mois).
   const fmt = (n: number) => n.toLocaleString('fr-FR');
 
   return (
@@ -409,26 +407,7 @@ export default function LandingPage() {
           <p className="text-gray-500 mt-3">À partir de 170 F par jour. Payez en F CFA, annulez quand vous voulez.</p>
         </div>
 
-        {/* Bascule Mensuel / Annuel */}
-        <div className="flex items-center justify-center gap-3 mb-12">
-          <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
-            <button
-              onClick={() => setAnnual(false)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${!annual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
-            >
-              Mensuel
-            </button>
-            <button
-              onClick={() => setAnnual(true)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${annual ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
-            >
-              Annuel
-              <span className="bg-green-100 text-green-700 text-[11px] font-semibold px-2 py-0.5 rounded-full">2 mois offerts</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-stretch mt-12">
           {PLANS.map((plan) => {
             const Icon = plan.icon;
             return (
@@ -452,16 +431,6 @@ export default function LandingPage() {
                     <>
                       <span className="text-3xl font-bold text-gray-900">Sur mesure</span>
                       <p className="text-xs text-gray-400 mt-1">Selon vos boutiques & besoins</p>
-                    </>
-                  ) : annual ? (
-                    <>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-gray-900">{fmt(plan.monthly * 10)}</span>
-                        <span className="text-sm text-gray-400">F CFA / an</span>
-                      </div>
-                      <p className="text-xs text-green-600 mt-1 font-medium">
-                        soit {fmt(Math.round((plan.monthly * 10) / 12))} F/mois · 2 mois offerts
-                      </p>
                     </>
                   ) : (
                     <>
