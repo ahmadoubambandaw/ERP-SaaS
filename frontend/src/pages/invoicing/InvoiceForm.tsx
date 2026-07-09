@@ -1,8 +1,11 @@
+import { useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Trash2, ArrowLeft, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { invoicingService } from '../../services/api';
+import { getApiError } from '../../utils/apiError';
 import { formatCurrency } from '../../utils/format';
 import { useAuthStore } from '../../store/auth.store';
 
@@ -28,8 +31,10 @@ export default function InvoiceFormPage() {
   const currency = organization?.currency || 'XOF';
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { id } = useParams();
+  const isEdit = Boolean(id);
 
-  const { register, control, handleSubmit, watch } = useForm<InvoiceFormData>({
+  const { register, control, handleSubmit, watch, reset } = useForm<InvoiceFormData>({
     defaultValues: {
       type: 'INVOICE',
       issueDate: new Date().toISOString().split('T')[0],
@@ -41,6 +46,8 @@ export default function InvoiceFormPage() {
 
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' });
   const lines = watch('lines');
+  const docType = watch('type');
+  const docLabel = docType === 'QUOTE' ? 'devis' : docType === 'PROFORMA' ? 'proforma' : docType === 'CREDIT_NOTE' ? 'avoir' : 'facture';
 
   const { data: customersData } = useQuery({
     queryKey: ['customers'],
@@ -48,13 +55,46 @@ export default function InvoiceFormPage() {
   });
   const customers = customersData?.data?.data || [];
 
+  // Chargement du document en mode édition
+  const { data: invData, isLoading: loadingInvoice } = useQuery({
+    queryKey: ['invoice', id],
+    queryFn: () => invoicingService.get(id!),
+    enabled: isEdit,
+  });
+
+  useEffect(() => {
+    const inv = invData?.data?.data;
+    if (!inv) return;
+    reset({
+      customerId: inv.customerId || inv.customer?.id || '',
+      type: inv.type,
+      issueDate: String(inv.issueDate).split('T')[0],
+      dueDate: String(inv.dueDate).split('T')[0],
+      currency: inv.currency || currency,
+      notes: inv.notes || '',
+      lines: (inv.lines || []).map((l: Record<string, unknown>) => ({
+        description: String(l.description ?? ''),
+        quantity: Number(l.quantity ?? 1),
+        unitPrice: Number(l.unitPrice ?? 0),
+        taxRate: Number(l.taxRate ?? 0),
+      })),
+    });
+  }, [invData, reset, currency]);
+
   const subtotal = lines.reduce((s, l) => s + (l.quantity * l.unitPrice), 0);
   const tax = lines.reduce((s, l) => s + (l.quantity * l.unitPrice * (l.taxRate / 100)), 0);
   const total = subtotal + tax;
 
   const mutation = useMutation({
-    mutationFn: (data: InvoiceFormData) => invoicingService.create(data),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['invoices'] }); navigate('/invoicing'); },
+    mutationFn: (data: InvoiceFormData) =>
+      isEdit ? invoicingService.update(id!, data) : invoicingService.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['invoices'] });
+      if (isEdit) qc.invalidateQueries({ queryKey: ['invoice', id] });
+      toast.success(isEdit ? 'Document modifié' : 'Document enregistré');
+      navigate(isEdit ? `/invoicing/${id}` : '/invoicing');
+    },
+    onError: (e) => toast.error(getApiError(e, "Échec de l'enregistrement")),
   });
 
   return (
@@ -64,9 +104,17 @@ export default function InvoiceFormPage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Nouvelle facture</h1>
+          <h1 className="text-2xl font-bold text-gray-900 capitalize">
+            {isEdit ? `Modifier le ${docLabel}` : 'Nouveau document'}
+          </h1>
         </div>
       </div>
+
+      {isEdit && loadingInvoice && (
+        <div className="py-10 text-center text-gray-400">
+          <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
         <div className="card p-6 space-y-4">
@@ -170,7 +218,7 @@ export default function InvoiceFormPage() {
           <button type="button" onClick={() => navigate(-1)} className="btn-secondary">Annuler</button>
           <button type="submit" disabled={mutation.isPending} className="btn-primary flex items-center gap-2">
             {mutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
-            Enregistrer
+            {isEdit ? 'Enregistrer les modifications' : 'Enregistrer'}
           </button>
         </div>
       </form>

@@ -163,9 +163,51 @@ export class InvoicingService {
 
   async updateInvoice(orgId: string, id: string, body: unknown) {
     const inv = await this.getInvoice(orgId, id);
-    if (!['DRAFT'].includes(inv.status)) throw new AppError('Seules les factures brouillon peuvent etre modifiees', 400);
-    const data = invoiceSchema.partial().omit({ lines: true }).parse(body);
-    return prisma.invoice.update({ where: { id }, data });
+
+    // Modifiable tant qu'aucun paiement n'a été enregistré (les devis le sont toujours).
+    if (inv.status === 'CANCELLED') {
+      throw new AppError('Un document annulé ne peut plus être modifié.', 400);
+    }
+    if (Number(inv.paidAmount) > 0) {
+      throw new AppError(
+        'Cette facture a déjà reçu un paiement : elle ne peut plus être modifiée. Créez un avoir pour corriger.',
+        400,
+      );
+    }
+
+    const data = invoiceSchema.partial().parse(body);
+    if (data.customerId) await this.getCustomer(orgId, data.customerId);
+
+    const { lines: newLines, ...header } = data;
+
+    // Sans changement de lignes : simple mise à jour de l'en-tête
+    if (!newLines) {
+      return prisma.invoice.update({
+        where: { id },
+        data: header,
+        include: { customer: true, lines: { orderBy: { sortOrder: 'asc' } } },
+      });
+    }
+
+    // Recalcul complet des totaux à partir des nouvelles lignes
+    const lines = newLines.map((l) => ({
+      ...l,
+      total: l.quantity * l.unitPrice * (1 + l.taxRate / 100),
+    }));
+    const subtotal = lines.reduce((s, l) => s + l.quantity * l.unitPrice, 0);
+    const taxAmount = lines.reduce((s, l) => s + l.quantity * l.unitPrice * (l.taxRate / 100), 0);
+    const total = subtotal + taxAmount;
+
+    // Remplacement atomique des lignes (compatible pooler : transaction en tableau)
+    const [, updated] = await prisma.$transaction([
+      prisma.invoiceLine.deleteMany({ where: { invoiceId: id } }),
+      prisma.invoice.update({
+        where: { id },
+        data: { ...header, subtotal, taxAmount, total, lines: { create: lines } },
+        include: { customer: true, lines: { orderBy: { sortOrder: 'asc' } } },
+      }),
+    ]);
+    return updated;
   }
 
   async sendInvoice(orgId: string, id: string) {
