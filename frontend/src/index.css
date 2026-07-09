@@ -57,6 +57,82 @@
   }
 }
 
+/* ============================================================
+   MODE SOMBRE (fond nuit) — appliqué via la classe .dark sur <html>
+   uniquement dans l'app (les pages publiques restent claires).
+   Retrofit par surcharge des utilitaires de surface / texte / bordure.
+   ============================================================ */
+.dark { color-scheme: dark; }
+.dark body { background-color: #0a1120; color: #e6edf7; }
+
+/* Surfaces */
+.dark .bg-white { background-color: #141e30 !important; }
+.dark .bg-gray-50 { background-color: #0f1a2c !important; }
+.dark .bg-gray-100 { background-color: #131f34 !important; }
+.dark .bg-gray-900 { background-color: #0a121f !important; }
+
+/* Textes */
+.dark .text-gray-900 { color: #e6edf7 !important; }
+.dark .text-gray-800 { color: #dbe4f0 !important; }
+.dark .text-gray-700 { color: #c3cfe0 !important; }
+.dark .text-gray-600 { color: #a9b7cc !important; }
+.dark .text-gray-500 { color: #93a2ba !important; }
+.dark .text-gray-400 { color: #74849c !important; }
+.dark .text-gray-300 { color: #4a5a74 !important; }
+
+/* Bordures */
+.dark .border-gray-100 { border-color: #243149 !important; }
+.dark .border-gray-200 { border-color: #29385a !important; }
+.dark .border-gray-300 { border-color: #324263 !important; }
+.dark .divide-gray-50 > :not([hidden]) ~ :not([hidden]) { border-color: #1e2b42 !important; }
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) { border-color: #243149 !important; }
+
+/* Hovers sur surfaces claires */
+.dark .hover\:bg-gray-50:hover { background-color: #182339 !important; }
+.dark .hover\:bg-gray-100:hover { background-color: #1c2942 !important; }
+.dark .hover\:bg-gray-800:hover { background-color: #1a2233 !important; }
+
+/* Tuiles / alertes en teintes translucides */
+.dark .bg-orange-50 { background-color: rgba(245,158,11,.12) !important; }
+.dark .bg-amber-50 { background-color: rgba(245,158,11,.12) !important; }
+.dark .bg-red-50 { background-color: rgba(239,68,68,.12) !important; }
+.dark .bg-green-50 { background-color: rgba(34,197,94,.12) !important; }
+.dark .bg-emerald-50 { background-color: rgba(16,185,129,.12) !important; }
+.dark .bg-blue-50 { background-color: rgba(59,130,246,.12) !important; }
+.dark .bg-sky-50 { background-color: rgba(14,165,233,.12) !important; }
+.dark .bg-yellow-50 { background-color: rgba(234,179,8,.12) !important; }
+.dark .bg-violet-50 { background-color: rgba(139,92,246,.14) !important; }
+.dark .bg-purple-50 { background-color: rgba(168,85,247,.14) !important; }
+.dark .bg-rose-50 { background-color: rgba(244,63,94,.12) !important; }
+.dark .bg-primary-50 { background-color: rgba(59,130,246,.14) !important; }
+.dark .text-orange-700 { color: #fdba74 !important; }
+.dark .text-red-700 { color: #fca5a5 !important; }
+.dark .text-green-700 { color: #86efac !important; }
+.dark .text-blue-700 { color: #93c5fd !important; }
+.dark .text-amber-700 { color: #fcd34d !important; }
+.dark .text-yellow-700, .dark .text-yellow-800 { color: #fde047 !important; }
+.dark .text-primary-700 { color: #93c5fd !important; }
+
+/* Composants partagés */
+.dark .card { background-color: #141e30; border-color: #29385a; }
+.dark .input { background-color: #0f1a2c; border-color: #324263; color: #e6edf7; }
+.dark .input::placeholder { color: #5b6b83; }
+.dark .btn-secondary { background-color: #1a2740; border-color: #324263; color: #c3cfe0; }
+.dark .btn-secondary:hover { background-color: #22304d; }
+.dark .label { color: #a9b7cc; }
+.dark .table-row:hover { background-color: #182339; }
+.dark .badge-green { background-color: rgba(34,197,94,.18); color: #86efac; }
+.dark .badge-yellow { background-color: rgba(245,158,11,.18); color: #fcd34d; }
+.dark .badge-red { background-color: rgba(239,68,68,.18); color: #fca5a5; }
+.dark .badge-blue { background-color: rgba(59,130,246,.18); color: #93c5fd; }
+.dark .badge-gray { background-color: rgba(148,163,184,.18); color: #cbd5e1; }
+.dark ::placeholder { color: #5b6b83; }
+
+/* Barre de défilement */
+.dark ::-webkit-scrollbar-track { background: #0f1a2c; }
+.dark ::-webkit-scrollbar-thumb { background: #324263; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #445775; }
+
 /* Mobile: cards containing data tables scroll horizontally
    instead of squeezing columns */
 @media (max-width: 1023px) {

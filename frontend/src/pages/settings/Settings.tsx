@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone, Palette, Check, Gift, Sparkles } from 'lucide-react';
+import { Building2, User, Users, Plus, Loader2, UserX, UserCheck, Save, Upload, Trash2, KeyRound, Lock, CreditCard, Smartphone, Palette, Check, Gift, Sparkles, Sun, Moon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ import { getApiError } from '../../utils/apiError';
 import { useAuthStore } from '../../store/auth.store';
 import { PLAN_LABELS, PLAN_PRICES, PAYMENT_NUMBER, PAYMENT_NAME, formatDateFr } from '../../utils/subscription';
 import { THEMES, applyTheme, getCurrentTheme } from '../../utils/theme';
+import { useUiStore } from '../../store/ui.store';
 import { startCheckout } from '../../utils/checkout';
 
 import { ROLE_LABELS, ADVANCED_ROLES } from '../../utils/roles';
@@ -151,6 +152,8 @@ export default function SettingsPage() {
 
   // ===== Apparence =====
   const [theme, setTheme] = useState(getCurrentTheme());
+  const dark = useUiStore((s) => s.dark);
+  const setDark = useUiStore((s) => s.setDark);
 
   // ===== Organisation =====
   const [orgError, setOrgError] = useState('');
@@ -312,6 +315,27 @@ export default function SettingsPage() {
           <Palette className="w-5 h-5 text-primary-600" />
           <h2 className="font-semibold text-gray-900">Apparence</h2>
         </div>
+        {/* Mode clair / sombre */}
+        <p className="text-sm text-gray-500 mb-3">Mode d'affichage</p>
+        <div className="inline-flex p-1 rounded-xl bg-gray-100 mb-6">
+          <button
+            onClick={() => setDark(false)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              !dark ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+            }`}
+          >
+            <Sun className="w-4 h-4" /> Clair
+          </button>
+          <button
+            onClick={() => setDark(true)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              dark ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500'
+            }`}
+          >
+            <Moon className="w-4 h-4" /> Sombre
+          </button>
+        </div>
+
         <p className="text-sm text-gray-500 mb-4">Choisissez la couleur principale de votre espace.</p>
         <div className="flex flex-wrap gap-3">
           {THEMES.map((t) => (
