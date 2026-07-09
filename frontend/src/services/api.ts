@@ -169,6 +169,12 @@ export const scanService = {
   table: (data: { image: string; columns: unknown[]; entity?: string }) => api.post('/scan/table', data),
 };
 
+export const assistantService = {
+  // Conseiller IA public (landing page)
+  chat: (messages: { role: 'user' | 'assistant'; content: string }[]) =>
+    api.post('/assistant/chat', { messages }),
+};
+
 export const posService = {
   catalog: () => api.get('/pos/catalog'),
   summary: () => api.get('/pos/summary'),

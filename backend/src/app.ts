@@ -21,6 +21,7 @@ import { demoRouter } from './modules/demo/demo.routes';
 import { posRouter } from './modules/pos/pos.routes';
 import { companiesRouter } from './modules/companies/companies.routes';
 import { scanRouter } from './modules/scan/scan.routes';
+import { assistantRouter } from './modules/assistant/assistant.routes';
 import { prisma } from './utils/prisma';
 
 const app = express();
@@ -97,6 +98,7 @@ app.use(`${api}/demo`, demoRouter);
 app.use(`${api}/pos`, posRouter);
 app.use(`${api}/companies`, companiesRouter);
 app.use(`${api}/scan`, scanRouter);
+app.use(`${api}/assistant`, assistantRouter);
 
 app.use(errorMiddleware);
 

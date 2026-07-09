@@ -8,6 +8,8 @@ import {
 import { useState } from 'react';
 import Logo from '../../components/ui/Logo';
 import AudioGuide from '../../components/ui/AudioGuide';
+import ChatAssistant from '../../components/ui/ChatAssistant';
+import { useAssistantStore } from '../../store/assistant.store';
 
 // Numéro WhatsApp de contact (format international sans +)
 const WHATSAPP = '221774140900';
@@ -169,6 +171,7 @@ const ENTERPRISE_TARGETS = [
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [faqOpen, setFaqOpen] = useState<number | null>(0);
+  const openAssistant = useAssistantStore((s) => s.setOpen);
 
   const fmt = (n: number) => n.toLocaleString('fr-FR');
 
@@ -509,16 +512,19 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <button
+              onClick={() => openAssistant(true)}
+              className="btn-primary text-base px-8 py-3 inline-flex items-center gap-2 w-full sm:w-auto justify-center"
+            >
+              <Sparkles className="w-4 h-4" /> Parler à un conseiller
+            </button>
             <a
               href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Bonjour, je gère plusieurs boutiques et je souhaite en savoir plus sur la formule Entreprise de Naatal.')}`}
               target="_blank"
               rel="noreferrer"
-              className="btn-primary text-base px-8 py-3 inline-flex items-center gap-2 w-full sm:w-auto justify-center"
+              className="text-gray-300 hover:text-white text-sm font-medium inline-flex items-center gap-1.5"
             >
-              Parler à un conseiller <ArrowRight className="w-4 h-4" />
-            </a>
-            <a href="#tarifs" className="text-gray-300 hover:text-white text-sm font-medium">
-              Comparer les formules ↑
+              <MessageCircle className="w-4 h-4" /> ou sur WhatsApp
             </a>
           </div>
         </div>
@@ -553,8 +559,12 @@ export default function LandingPage() {
           </div>
           <p className="text-center text-sm text-gray-500 mt-8">
             Une autre question ?{' '}
+            <button onClick={() => openAssistant(true)} className="text-primary-600 font-medium hover:underline">
+              Demandez à notre assistant
+            </button>
+            {' '}ou{' '}
             <a href={`https://wa.me/${WHATSAPP}?text=${WHATSAPP_MSG}`} target="_blank" rel="noreferrer" className="text-primary-600 font-medium">
-              Écrivez-nous sur WhatsApp
+              écrivez-nous sur WhatsApp
             </a>
           </p>
         </div>
@@ -597,17 +607,8 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* ===== Bouton WhatsApp flottant ===== */}
-      <a
-        href={`https://wa.me/${WHATSAPP}?text=${WHATSAPP_MSG}`}
-        target="_blank"
-        rel="noreferrer"
-        aria-label="Contacter sur WhatsApp"
-        className="fixed bottom-5 right-5 z-50 flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white pl-3 pr-4 py-3 rounded-full shadow-lg transition-colors"
-      >
-        <MessageCircle className="w-6 h-6" />
-        <span className="hidden sm:inline font-medium text-sm">Discuter sur WhatsApp</span>
-      </a>
+      {/* ===== Assistant IA flottant (WhatsApp accessible à l'intérieur) ===== */}
+      <ChatAssistant />
     </div>
   );
 }
