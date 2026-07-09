@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
-import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2, Download, Mail, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Send, Trash2, Plus, CreditCard, Loader2, Download, Mail, MessageCircle, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState } from 'react';
 import { invoicingService } from '../../services/api';
@@ -208,6 +208,8 @@ export default function InvoiceDetailPage() {
   const isCancelled = inv.status === 'CANCELLED';
   const isPaid = inv.status === 'PAID';
   const canReceivePayment = !isPaid && !isCancelled && inv.status !== 'DRAFT';
+  // Modifiable tant qu'aucun paiement n'a été enregistré (les devis le sont toujours)
+  const isEditable = !isCancelled && Number(inv.paidAmount) === 0;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -233,6 +235,14 @@ export default function InvoiceDetailPage() {
           >
             <Download className="w-4 h-4" /> PDF
           </button>
+          {isEditable && (
+            <button
+              onClick={() => navigate(`/invoicing/${inv.id}/edit`)}
+              className="btn-secondary flex items-center gap-2"
+            >
+              <Pencil className="w-4 h-4" /> Modifier
+            </button>
+          )}
           {!isCancelled && (
             <>
               <button
