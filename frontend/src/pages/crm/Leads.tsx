@@ -155,7 +155,7 @@ export default function LeadsPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <label className="label">Prénom *</label>
               <input {...register('firstName', { required: 'Requis' })} className="input" />

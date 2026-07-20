@@ -110,8 +110,8 @@ export default function OpportunitiesPage() {
               Aucun client enregistré. Créez d'abord un client (ou convertissez un prospect).
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="col-span-2">
+          <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
               <label className="label">Nom de l'opportunité *</label>
               <input {...register('name', { required: 'Requis' })} className="input" placeholder="Vente équipement bureau..." />
               {errors.name && <p className="text-xs text-red-500 mt-1">{errors.name.message}</p>}
@@ -145,7 +145,7 @@ export default function OpportunitiesPage() {
               <label className="label">Date de clôture prévue</label>
               <input {...register('expectedCloseDate')} type="date" className="input" />
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="label">Notes</label>
               <input {...register('notes')} className="input" placeholder="Optionnel" />
             </div>

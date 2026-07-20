@@ -213,7 +213,7 @@ export default function AccountingPage() {
         <div className="card p-6 border-2 border-primary-100">
           <h3 className="font-semibold text-gray-900 mb-4">Nouvelle écriture comptable</h3>
           <form onSubmit={entryForm.handleSubmit((d) => createEntry.mutate(d))} className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <label className="label">Journal *</label>
                 <select {...entryForm.register('journalId', { required: true })} className="input">
@@ -315,12 +315,12 @@ export default function AccountingPage() {
       {showAccountForm && (
         <div className="card p-6 border-2 border-primary-100">
           <h3 className="font-semibold text-gray-900 mb-4">Nouveau compte</h3>
-          <form onSubmit={accountForm.handleSubmit((d) => createAccount.mutate(d))} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <form onSubmit={accountForm.handleSubmit((d) => createAccount.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <label className="label">Code *</label>
               <input {...accountForm.register('code', { required: true })} className="input font-mono" placeholder="521" />
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="label">Intitulé *</label>
               <input {...accountForm.register('name', { required: true })} className="input" placeholder="Banques locales" />
             </div>
@@ -330,7 +330,7 @@ export default function AccountingPage() {
                 {ACCOUNT_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
-            <div className="col-span-4 flex justify-end gap-3">
+            <div className="col-span-full flex justify-end gap-3">
               <button type="button" onClick={() => { setShowAccountForm(false); accountForm.reset(); }} className="btn-secondary">Annuler</button>
               <button type="submit" disabled={createAccount.isPending} className="btn-primary">Créer</button>
             </div>
@@ -342,7 +342,7 @@ export default function AccountingPage() {
       {showJournalForm && (
         <div className="card p-6 border-2 border-primary-100">
           <h3 className="font-semibold text-gray-900 mb-4">Nouveau journal</h3>
-          <form onSubmit={journalForm.handleSubmit((d) => createJournal.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <form onSubmit={journalForm.handleSubmit((d) => createJournal.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <label className="label">Code *</label>
               <input {...journalForm.register('code', { required: true })} className="input font-mono" placeholder="VTE" />

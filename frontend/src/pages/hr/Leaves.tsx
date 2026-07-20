@@ -142,7 +142,7 @@ export default function LeavesPage() {
           )}
           <form
             onSubmit={handleSubmit((d) => mutation.mutate(d))}
-            className="grid grid-cols-2 md:grid-cols-3 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
           >
             <div>
               <label className="label">Employé *</label>
@@ -182,7 +182,7 @@ export default function LeavesPage() {
               />
               {errors.endDate && <p className="text-xs text-red-500 mt-1">Requis</p>}
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="label">Motif</label>
               <input
                 {...register('reason')}
