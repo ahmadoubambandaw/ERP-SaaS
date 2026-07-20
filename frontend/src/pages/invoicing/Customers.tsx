@@ -86,7 +86,7 @@ export default function CustomersPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
             <div><label className="label">Email</label><input {...register('email')} type="email" className="input" /></div>
             <div><label className="label">Telephone</label><input {...register('phone')} className="input" /></div>

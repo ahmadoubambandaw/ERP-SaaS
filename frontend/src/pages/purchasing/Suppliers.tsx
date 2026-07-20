@@ -117,7 +117,7 @@ export default function SuppliersPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <label className="label">Nom *</label>
               <input {...register('name', { required: 'Requis' })} className="input" placeholder="Nom du fournisseur" />

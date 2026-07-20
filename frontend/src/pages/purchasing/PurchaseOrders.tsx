@@ -163,7 +163,7 @@ export default function PurchaseOrdersPage() {
             </div>
           )}
           <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <label className="label">Fournisseur *</label>
                 <select {...register('supplierId', { required: true })} className="input">

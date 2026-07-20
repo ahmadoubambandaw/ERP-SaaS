@@ -109,7 +109,7 @@ export default function StockMovementsPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <label className="label">Produit *</label>
               <select {...register('productId', { required: true })} className="input">
@@ -158,7 +158,7 @@ export default function StockMovementsPage() {
               <label className="label">Référence</label>
               <input {...register('reference')} className="input" placeholder="Bon de commande, facture..." />
             </div>
-            <div className="col-span-2">
+            <div className="sm:col-span-2">
               <label className="label">Notes</label>
               <input {...register('notes')} className="input" placeholder="Notes optionnelles" />
             </div>

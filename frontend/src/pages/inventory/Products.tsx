@@ -281,7 +281,7 @@ export default function ProductsPage() {
           )}
           <form
             onSubmit={handleSubmit((d) => mutation.mutate({ ...d, ...(productImage ? { image: productImage } : {}) }))}
-            className="grid grid-cols-2 md:grid-cols-3 gap-4"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"
           >
             {/* Photo du produit */}
             <div className="col-span-full flex items-center gap-4">
@@ -322,8 +322,8 @@ export default function ProductsPage() {
             </div>
 
             <div><label className="label">Code *</label><input {...register('code', { required: true })} className="input" /></div>
-            <div className="col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
-            <div className="col-span-2 md:col-span-1">
+            <div className="sm:col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
+            <div className="sm:col-span-2 md:col-span-1">
               <label className="label">Code-barres / QR</label>
               <div className="flex gap-2">
                 <input {...register('barcode')} className="input flex-1" placeholder="EAN, QR…" />

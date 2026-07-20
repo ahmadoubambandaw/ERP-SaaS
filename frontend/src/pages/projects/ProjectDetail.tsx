@@ -74,8 +74,8 @@ export default function ProjectDetailPage() {
 
       {showTaskForm && (
         <div className="card p-6">
-          <form onSubmit={handleSubmit((d) => createTask.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="col-span-2"><label className="label">Titre *</label><input {...register('title', { required: true })} className="input" /></div>
+          <form onSubmit={handleSubmit((d) => createTask.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="sm:col-span-2"><label className="label">Titre *</label><input {...register('title', { required: true })} className="input" /></div>
             <div><label className="label">Priorite</label>
               <select {...register('priority')} className="input">
                 <option value="LOW">Faible</option>

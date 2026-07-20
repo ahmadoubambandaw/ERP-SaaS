@@ -47,8 +47,8 @@ export default function ProjectsPage() {
               {errorMsg}
             </div>
           )}
-          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
+          <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="sm:col-span-2"><label className="label">Nom *</label><input {...register('name', { required: true })} className="input" /></div>
             <div><label className="label">Statut</label>
               <select {...register('status')} className="input">
                 <option value="PLANNING">Planification</option>
