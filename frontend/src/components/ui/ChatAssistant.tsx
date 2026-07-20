@@ -7,7 +7,7 @@ import Logo from './Logo';
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
-const WHATSAPP = '221774140900';
+const WHATSAPP = '221710680152';
 const WHATSAPP_MSG = encodeURIComponent('Bonjour, je souhaite parler à un conseiller Naatal.');
 
 const GREETING =
@@ -80,7 +80,7 @@ export default function ChatAssistant() {
       const err = e as AxiosError<{ error?: string }>;
       const msg =
         err.response?.data?.error ||
-        "Je ne parviens pas à répondre pour l'instant. Écrivez-nous sur WhatsApp au +221 77 414 09 00.";
+        "Je ne parviens pas à répondre pour l'instant. Écrivez-nous sur WhatsApp au +221 71 068 01 52.";
       setMessages((m) => [...m, { role: 'assistant', content: msg }]);
     } finally {
       setLoading(false);

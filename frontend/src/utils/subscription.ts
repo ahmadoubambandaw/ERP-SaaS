@@ -13,7 +13,7 @@ export const PLAN_PRICES: Record<string, string> = {
 };
 
 // Numéro qui reçoit les paiements d'abonnement (Wave / Orange Money)
-export const PAYMENT_NUMBER = '77 414 09 00';
+export const PAYMENT_NUMBER = '71 068 01 52';
 export const PAYMENT_NAME = 'NdawTech';
 
 export function formatDateFr(d: string | Date): string {

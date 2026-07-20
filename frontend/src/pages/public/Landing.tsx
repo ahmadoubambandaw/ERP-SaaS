@@ -12,7 +12,7 @@ import ChatAssistant from '../../components/ui/ChatAssistant';
 import { useAssistantStore } from '../../store/assistant.store';
 
 // Numéro WhatsApp de contact (format international sans +)
-const WHATSAPP = '221774140900';
+const WHATSAPP = '221710680152';
 const WHATSAPP_MSG = encodeURIComponent('Bonjour, je souhaite en savoir plus sur votre ERP pour ma PME.');
 
 const FAQ: { q: string; a: string }[] = [
