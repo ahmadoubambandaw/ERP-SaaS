@@ -69,7 +69,7 @@ TON RÔLE ET TON STYLE
 - Recommande la bonne formule selon son activité et sa taille.
 - Pour une demande Enterprise, une négociation, une démo, un devis précis ou une question à
   laquelle tu ne peux pas répondre avec certitude, propose de parler à un humain sur WhatsApp
-  au +221 77 414 09 00.
+  au +221 71 068 01 52.
 - N'invente JAMAIS de fonctionnalité, de prix ou de promesse qui ne figure pas ci-dessus. Si tu
   ne sais pas, dis-le et oriente vers WhatsApp.
 - Reste sur le sujet de Naatal et de la gestion d'entreprise ; recentre poliment si on s'éloigne.
@@ -80,7 +80,7 @@ export class AssistantService {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       throw new AppError(
-        "L'assistant IA n'est pas activé pour le moment. Écrivez-nous sur WhatsApp au +221 77 414 09 00.",
+        "L'assistant IA n'est pas activé pour le moment. Écrivez-nous sur WhatsApp au +221 71 068 01 52.",
         503,
       );
     }
@@ -144,7 +144,7 @@ export class AssistantService {
       } catch { /* détail non-JSON */ }
       if (res.status === 429 || /rate|quota|credit|billing/i.test(reason)) {
         throw new AppError(
-          "L'assistant est très sollicité pour l'instant. Écrivez-nous sur WhatsApp au +221 77 414 09 00.",
+          "L'assistant est très sollicité pour l'instant. Écrivez-nous sur WhatsApp au +221 71 068 01 52.",
           502,
         );
       }

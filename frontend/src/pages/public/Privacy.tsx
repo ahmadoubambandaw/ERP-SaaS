@@ -149,7 +149,7 @@ export default function PrivacyPage() {
             Pour toute question sur vos données :
           </p>
           <ul className="list-disc list-inside space-y-1">
-            <li>WhatsApp : <a className="text-primary-600 font-medium" href="https://wa.me/221774140900">+221 77 414 09 00</a></li>
+            <li>WhatsApp : <a className="text-primary-600 font-medium" href="https://wa.me/221710680152">+221 71 068 01 52</a></li>
             <li>Email : <a className="text-primary-600 font-medium" href="mailto:ndawk5699@gmail.com">ndawk5699@gmail.com</a></li>
           </ul>
           <p>
