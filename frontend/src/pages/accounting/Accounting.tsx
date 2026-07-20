@@ -237,65 +237,62 @@ export default function AccountingPage() {
               </div>
             </div>
 
-            {/* Lines */}
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="text-left px-3 py-2 font-medium text-gray-600 w-1/3">Compte</th>
-                    <th className="text-left px-3 py-2 font-medium text-gray-600">Libellé</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-600 w-32">Débit</th>
-                    <th className="text-right px-3 py-2 font-medium text-gray-600 w-32">Crédit</th>
-                    <th className="w-8"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {fields.map((field, i) => (
-                    <tr key={field.id}>
-                      <td className="px-3 py-2">
-                        <select {...entryForm.register(`lines.${i}.accountId`)} className="input text-sm">
-                          <option value="">— compte —</option>
-                          {accounts.map((a) => (
-                            <option key={a.id as string} value={a.id as string}>
-                              {a.code as string} {a.name as string}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2">
-                        <input {...entryForm.register(`lines.${i}.description`)} className="input text-sm" placeholder="Libellé" />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input {...entryForm.register(`lines.${i}.debit`, { valueAsNumber: true })} type="number" min="0" step="1" className="input text-right text-sm" placeholder="0" />
-                      </td>
-                      <td className="px-3 py-2">
-                        <input {...entryForm.register(`lines.${i}.credit`, { valueAsNumber: true })} type="number" min="0" step="1" className="input text-right text-sm" placeholder="0" />
-                      </td>
-                      <td className="px-3 py-2">
-                        {fields.length > 2 && (
-                          <button type="button" onClick={() => remove(i)} className="text-red-400 hover:text-red-600">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot className="bg-gray-50">
-                  <tr>
-                    <td colSpan={2} className="px-3 py-2">
-                      <button type="button" onClick={() => append({ accountId: '', description: '', debit: 0, credit: 0 })} className="text-sm text-primary-600 hover:underline flex items-center gap-1">
-                        <Plus className="w-3 h-3" /> Ajouter une ligne
-                      </button>
-                    </td>
-                    <td className="px-3 py-2 text-right font-semibold text-sm">{formatCurrency(totalDebit, currency)}</td>
-                    <td className={`px-3 py-2 text-right font-semibold text-sm ${!isBalanced && (totalDebit || totalCredit) ? 'text-red-600' : ''}`}>
-                      {formatCurrency(totalCredit, currency)}
-                    </td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
+            {/* Lignes de l'écriture — une carte par ligne */}
+            <div className="space-y-3">
+              {fields.map((field, i) => (
+                <div key={field.id} className="relative rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+                  <span className="absolute -top-2.5 left-3 bg-white px-1.5 text-xs font-semibold text-gray-400">
+                    Ligne {i + 1}
+                  </span>
+                  {fields.length > 2 && (
+                    <button
+                      type="button"
+                      onClick={() => remove(i)}
+                      aria-label="Supprimer la ligne"
+                      className="absolute top-3 right-3 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  <div className="pr-9">
+                    <label className="label">Compte</label>
+                    <select {...entryForm.register(`lines.${i}.accountId`)} className="input">
+                      <option value="">— compte —</option>
+                      {accounts.map((a) => (
+                        <option key={a.id as string} value={a.id as string}>
+                          {a.code as string} {a.name as string}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mt-3">
+                    <label className="label">Libellé</label>
+                    <input {...entryForm.register(`lines.${i}.description`)} className="input" placeholder="Libellé" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                      <label className="label">Débit</label>
+                      <input {...entryForm.register(`lines.${i}.debit`, { valueAsNumber: true })} type="number" min="0" step="1" className="input text-right" placeholder="0" />
+                    </div>
+                    <div>
+                      <label className="label">Crédit</label>
+                      <input {...entryForm.register(`lines.${i}.credit`, { valueAsNumber: true })} type="number" min="0" step="1" className="input text-right" placeholder="0" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <button type="button" onClick={() => append({ accountId: '', description: '', debit: 0, credit: 0 })} className="text-sm text-primary-600 hover:underline flex items-center gap-1">
+                <Plus className="w-3.5 h-3.5" /> Ajouter une ligne
+              </button>
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-gray-500">Débit : <strong className="text-gray-900 tabular-nums">{formatCurrency(totalDebit, currency)}</strong></span>
+                <span className={!isBalanced && (totalDebit || totalCredit) ? 'text-red-600' : 'text-gray-500'}>
+                  Crédit : <strong className="tabular-nums">{formatCurrency(totalCredit, currency)}</strong>
+                </span>
+              </div>
             </div>
 
             {!isBalanced && (totalDebit > 0 || totalCredit > 0) && (

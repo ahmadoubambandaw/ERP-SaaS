@@ -157,49 +157,53 @@ export default function InvoiceFormPage() {
             </button>
           </div>
 
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left pb-2 font-medium text-gray-500">Description</th>
-                <th className="text-right pb-2 font-medium text-gray-500 w-20">Qte</th>
-                <th className="text-right pb-2 font-medium text-gray-500 w-32">Prix unit.</th>
-                <th className="text-right pb-2 font-medium text-gray-500 w-20">TVA %</th>
-                <th className="text-right pb-2 font-medium text-gray-500 w-32">Total</th>
-                <th className="w-10"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {fields.map((field, index) => (
-                <tr key={field.id}>
-                  <td className="py-2 pr-2">
+          <div className="space-y-3">
+            {fields.map((field, index) => {
+              const lineTotal = (lines[index]?.quantity || 0) * (lines[index]?.unitPrice || 0) * (1 + (lines[index]?.taxRate || 0) / 100);
+              return (
+                <div key={field.id} className="relative rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+                  <span className="absolute -top-2.5 left-3 bg-white px-1.5 text-xs font-semibold text-gray-400">
+                    Ligne {index + 1}
+                  </span>
+                  {fields.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => remove(index)}
+                      aria-label="Supprimer la ligne"
+                      className="absolute top-3 right-3 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  <div className="pr-9">
+                    <label className="label">Description</label>
                     <input {...register(`lines.${index}.description`)} className="input" placeholder="Description du service/produit" />
-                  </td>
-                  <td className="py-2 px-2">
-                    <input {...register(`lines.${index}.quantity`, { valueAsNumber: true })} type="number" step="0.001" min="0" className="input text-right" />
-                  </td>
-                  <td className="py-2 px-2">
-                    <input {...register(`lines.${index}.unitPrice`, { valueAsNumber: true })} type="number" step="1" min="0" className="input text-right" />
-                  </td>
-                  <td className="py-2 px-2">
-                    <input {...register(`lines.${index}.taxRate`, { valueAsNumber: true })} type="number" step="0.5" min="0" max="100" className="input text-right" />
-                  </td>
-                  <td className="py-2 pl-2 text-right font-medium">
-                    {formatCurrency((lines[index]?.quantity || 0) * (lines[index]?.unitPrice || 0) * (1 + (lines[index]?.taxRate || 0) / 100), currency)}
-                  </td>
-                  <td className="py-2 pl-2">
-                    {fields.length > 1 && (
-                      <button type="button" onClick={() => remove(index)} className="p-1 text-red-400 hover:text-red-600">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 mt-3">
+                    <div>
+                      <label className="label">Qté</label>
+                      <input {...register(`lines.${index}.quantity`, { valueAsNumber: true })} type="number" step="0.001" min="0" className="input text-right" />
+                    </div>
+                    <div>
+                      <label className="label">Prix unit.</label>
+                      <input {...register(`lines.${index}.unitPrice`, { valueAsNumber: true })} type="number" step="1" min="0" className="input text-right" />
+                    </div>
+                    <div>
+                      <label className="label">TVA %</label>
+                      <input {...register(`lines.${index}.taxRate`, { valueAsNumber: true })} type="number" step="0.5" min="0" max="100" className="input text-right" />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200/70">
+                    <span className="text-xs text-gray-500">Total de la ligne</span>
+                    <span className="font-semibold text-gray-900 tabular-nums">{formatCurrency(lineTotal, currency)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
           <div className="flex justify-end">
-            <div className="w-64 space-y-2 text-sm">
+            <div className="w-full sm:w-64 space-y-2 text-sm">
               <div className="flex justify-between"><span className="text-gray-500">Sous-total</span><span>{formatCurrency(subtotal, currency)}</span></div>
               <div className="flex justify-between"><span className="text-gray-500">TVA</span><span>{formatCurrency(tax, currency)}</span></div>
               <div className="flex justify-between font-bold text-base border-t border-gray-200 pt-2">

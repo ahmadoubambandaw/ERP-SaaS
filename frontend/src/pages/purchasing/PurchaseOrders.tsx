@@ -196,30 +196,54 @@ export default function PurchaseOrdersPage() {
                   <Plus className="w-3.5 h-3.5" /> Ajouter une ligne
                 </button>
               </div>
-              <div className="space-y-2">
-                {fields.map((field, i) => (
-                  <div key={field.id} className="flex gap-2 items-center">
-                    <select {...register(`lines.${i}.productId`, { required: true })} className="input flex-1">
-                      <option value="">-- Produit --</option>
-                      {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
-                    </select>
-                    <input
-                      {...register(`lines.${i}.quantity`, { required: true, valueAsNumber: true, min: 0.001 })}
-                      type="number" step="1" min="0" placeholder="Qté" className="input w-24"
-                    />
-                    <input
-                      {...register(`lines.${i}.unitCost`, { required: true, valueAsNumber: true, min: 0 })}
-                      type="number" step="1" min="0" placeholder="Coût unit." className="input w-32"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => fields.length > 1 && remove(i)}
-                      className="p-2 text-red-400 hover:bg-red-50 rounded"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {fields.map((field, i) => {
+                  const lineTotal = (Number(watchedLines?.[i]?.quantity) || 0) * (Number(watchedLines?.[i]?.unitCost) || 0);
+                  return (
+                    <div key={field.id} className="relative rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+                      <span className="absolute -top-2.5 left-3 bg-white px-1.5 text-xs font-semibold text-gray-400">
+                        Ligne {i + 1}
+                      </span>
+                      {fields.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => remove(i)}
+                          aria-label="Supprimer la ligne"
+                          className="absolute top-3 right-3 p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <div className="pr-9">
+                        <label className="label">Produit</label>
+                        <select {...register(`lines.${i}.productId`, { required: true })} className="input">
+                          <option value="">-- Produit --</option>
+                          {products.map((p) => <option key={p.id} value={p.id}>{p.name} ({p.code})</option>)}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mt-3">
+                        <div>
+                          <label className="label">Quantité</label>
+                          <input
+                            {...register(`lines.${i}.quantity`, { required: true, valueAsNumber: true, min: 0.001 })}
+                            type="number" step="1" min="0" placeholder="0" className="input text-right"
+                          />
+                        </div>
+                        <div>
+                          <label className="label">Coût unitaire</label>
+                          <input
+                            {...register(`lines.${i}.unitCost`, { required: true, valueAsNumber: true, min: 0 })}
+                            type="number" step="1" min="0" placeholder="0" className="input text-right"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200/70">
+                        <span className="text-xs text-gray-500">Total de la ligne</span>
+                        <span className="font-semibold text-gray-900 tabular-nums">{formatCurrency(lineTotal, currency)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
